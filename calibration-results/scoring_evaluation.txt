@@ -1,0 +1,18 @@
+Scoring Evaluation
+folders: 3
+ranking failures: 0
+warnings: 0
+missing clips: 0
+minimum score gap: 5.0
+
+voice-testing1
+- strong_vs_better: pass (100.0 vs 87.9, gap 12.1)
+- better_vs_flawed: pass (87.9 vs 81.9, gap 6.0)
+
+voice-testing2
+- strong_vs_better: pass (100.0 vs 92.0, gap 8.0)
+- better_vs_flawed: pass (92.0 vs 81.5, gap 10.5)
+
+voice-testing3
+- strong_vs_better: pass (100.0 vs 91.2, gap 8.8)
+- better_vs_flawed: pass (91.2 vs 80.8, gap 10.4)

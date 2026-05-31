@@ -1,0 +1,128 @@
+{
+  "summary": {
+    "folders": 3,
+    "ranking_failures": 0,
+    "warnings": 0,
+    "missing_clips": 0,
+    "minimum_score_gap": 5.0
+  },
+  "folders": [
+    {
+      "folder": "voice-testing1",
+      "missing_clips": [],
+      "ranking_checks": [
+        {
+          "comparison": "strong_vs_better",
+          "higher_clip": "base",
+          "lower_clip": "script2",
+          "higher_score": 100.0,
+          "lower_score": 87.9,
+          "score_gap": 12.1,
+          "status": "pass"
+        },
+        {
+          "comparison": "better_vs_flawed",
+          "higher_clip": "script2",
+          "lower_clip": "script1",
+          "higher_score": 87.9,
+          "lower_score": 81.9,
+          "score_gap": 6.0,
+          "status": "pass"
+        }
+      ],
+      "gap_warnings": [],
+      "issue_expectations": [
+        {
+          "clip": "script1",
+          "expectation": "flawed clip should have distracting fillers",
+          "observed": "Distracting fillers",
+          "status": "pass"
+        },
+        {
+          "clip": "script2",
+          "expectation": "better clip should not have distracting fillers",
+          "observed": "Some fillers",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "folder": "voice-testing2",
+      "missing_clips": [],
+      "ranking_checks": [
+        {
+          "comparison": "strong_vs_better",
+          "higher_clip": "base",
+          "lower_clip": "script2",
+          "higher_score": 100.0,
+          "lower_score": 92.0,
+          "score_gap": 8.0,
+          "status": "pass"
+        },
+        {
+          "comparison": "better_vs_flawed",
+          "higher_clip": "script2",
+          "lower_clip": "script1",
+          "higher_score": 92.0,
+          "lower_score": 81.5,
+          "score_gap": 10.5,
+          "status": "pass"
+        }
+      ],
+      "gap_warnings": [],
+      "issue_expectations": [
+        {
+          "clip": "script1",
+          "expectation": "flawed clip should have distracting fillers",
+          "observed": "Distracting fillers",
+          "status": "pass"
+        },
+        {
+          "clip": "script2",
+          "expectation": "better clip should not have distracting fillers",
+          "observed": "Some fillers",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "folder": "voice-testing3",
+      "missing_clips": [],
+      "ranking_checks": [
+        {
+          "comparison": "strong_vs_better",
+          "higher_clip": "base",
+          "lower_clip": "script2",
+          "higher_score": 100.0,
+          "lower_score": 91.2,
+          "score_gap": 8.8,
+          "status": "pass"
+        },
+        {
+          "comparison": "better_vs_flawed",
+          "higher_clip": "script2",
+          "lower_clip": "script1",
+          "higher_score": 91.2,
+          "lower_score": 80.8,
+          "score_gap": 10.4,
+          "status": "pass"
+        }
+      ],
+      "gap_warnings": [],
+      "issue_expectations": [
+        {
+          "clip": "script1",
+          "expectation": "flawed clip should have distracting fillers",
+          "observed": "Distracting fillers",
+          "status": "pass"
+        },
+        {
+          "clip": "script2",
+          "expectation": "better clip should not have distracting fillers",
+          "observed": "Some fillers",
+          "status": "pass"
+        }
+      ]
+    }
+  ]
+}

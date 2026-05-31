@@ -1,0 +1,528 @@
+{
+  "analysis_status": "Success",
+  "summary": {
+    "overall_label": "Developing",
+    "headline": "Main delivery issues: too slow, too flat, distracting fillers.",
+    "top_actions": [
+      "Tighten pauses and keep sentences moving with steadier energy.",
+      "Add more pitch contrast on important words so the message sounds less monotone.",
+      "Replace filler words with brief silent pauses."
+    ]
+  },
+  "baseline_profile": {
+    "archetype": "Folder Benchmark Rehearsal",
+    "dataset_source": "Folder benchmark: base.mp3",
+    "calibrated_metrics": {
+      "target_wpm": 152.2,
+      "target_pitch_std": 73.39,
+      "wpm_tolerance_margin": 12.0,
+      "pitch_tolerance_margin": 8.0
+    }
+  },
+  "performance_scores": {
+    "pacing_alignment": 82.9,
+    "vocal_intonation_variety": 85.0,
+    "word_choice_efficiency": 75.0,
+    "aggregate_vocal_rating": 80.8
+  },
+  "readable_metrics": {
+    "pace": {
+      "label": "Too slow",
+      "value": 114.1,
+      "unit": "words per minute",
+      "target_range": "140.2-164.2 words per minute",
+      "score": 82.9,
+      "meaning": "You are speaking slower than the calibrated Singapore presentation range, which can reduce energy and flow."
+    },
+    "intonation": {
+      "label": "Too flat",
+      "value": 65.31,
+      "unit": "pitch standard deviation in Hz",
+      "target_range": "65.4-81.4 Hz pitch standard deviation",
+      "score": 85.0,
+      "meaning": "Your pitch variation is below the target range, so the delivery may sound less expressive."
+    },
+    "fillers": {
+      "label": "Distracting fillers",
+      "value": 5,
+      "unit": "filler words",
+      "target_range": "0-2 per 100 words",
+      "score": 75.0,
+      "meaning": "Filler words are frequent enough that they may distract from the message."
+    }
+  },
+  "extracted_telemetry": {
+    "measured_wpm": 114.1,
+    "measured_pitch_std_hz": 65.31,
+    "total_filler_count": 5
+  },
+  "pauses_timeline": [],
+  "actionable_coaching_cards": [
+    "Cadence drops below target metrics. Focus on maintaining kinetic delivery speed.",
+    "High density of filler keywords found (7.7%). Replace 'um' or 'like' with silent breaks."
+  ],
+  "transcript": {
+    "text": "So, basically, our project is like a web app for public speaking coaching and the current market is way too expensive for students because human coaches cost a lot of money and if you try to practice by yourself, it's like really hard to see your own mistakes or check your body language. So, yeah, that's why we built this tool to automate the scoring.",
+    "word_count": 65
+  },
+  "speech_issues": {
+    "filler_words": [
+      {
+        "phrase": "So,",
+        "timestamp": 3.86,
+        "issue": "Filler word",
+        "suggestion": "Replace this with a brief silent pause or move directly to the next idea."
+      },
+      {
+        "phrase": "basically,",
+        "timestamp": 4.5,
+        "issue": "Filler word",
+        "suggestion": "Replace this with a brief silent pause or move directly to the next idea."
+      },
+      {
+        "phrase": "like",
+        "timestamp": 6.94,
+        "issue": "Filler word",
+        "suggestion": "Replace this with a brief silent pause or move directly to the next idea."
+      },
+      {
+        "phrase": "like",
+        "timestamp": 23.22,
+        "issue": "Filler word",
+        "suggestion": "Replace this with a brief silent pause or move directly to the next idea."
+      },
+      {
+        "phrase": "So,",
+        "timestamp": 27.2,
+        "issue": "Filler word",
+        "suggestion": "Replace this with a brief silent pause or move directly to the next idea."
+      }
+    ],
+    "pause_flags": [],
+    "pacing_flags": [
+      {
+        "phrase": "So, basically, our project is like a web",
+        "timestamp": 3.86,
+        "issue": "Too slow",
+        "meaning": "You are speaking slower than the calibrated Singapore presentation range, which can reduce energy and flow.",
+        "suggestion": "Use the target range as a guide and rehearse this section with deliberate pauses."
+      }
+    ],
+    "intonation_flags": [
+      {
+        "phrase": "So, basically, our project is like a web",
+        "timestamp": 3.86,
+        "issue": "Too flat",
+        "meaning": "Your pitch variation is below the target range, so the delivery may sound less expressive.",
+        "suggestion": "Mark the key words in this phrase and vary pitch on those emphasis points."
+      }
+    ]
+  },
+  "raw_metrics": {
+    "wpm": 114.1,
+    "pitch_variance_std": 65.31,
+    "is_monotone_delivery": false
+  },
+  "debug": {
+    "word_timeline": [
+      {
+        "word": "So,",
+        "clean": "so",
+        "start": 3.86,
+        "end": 4.5
+      },
+      {
+        "word": "basically,",
+        "clean": "basically",
+        "start": 4.5,
+        "end": 5.14
+      },
+      {
+        "word": "our",
+        "clean": "our",
+        "start": 5.98,
+        "end": 6.28
+      },
+      {
+        "word": "project",
+        "clean": "project",
+        "start": 6.28,
+        "end": 6.66
+      },
+      {
+        "word": "is",
+        "clean": "is",
+        "start": 6.66,
+        "end": 6.94
+      },
+      {
+        "word": "like",
+        "clean": "like",
+        "start": 6.94,
+        "end": 7.5
+      },
+      {
+        "word": "a",
+        "clean": "a",
+        "start": 7.5,
+        "end": 8.52
+      },
+      {
+        "word": "web",
+        "clean": "web",
+        "start": 8.52,
+        "end": 8.72
+      },
+      {
+        "word": "app",
+        "clean": "app",
+        "start": 8.72,
+        "end": 9.06
+      },
+      {
+        "word": "for",
+        "clean": "for",
+        "start": 9.06,
+        "end": 9.42
+      },
+      {
+        "word": "public",
+        "clean": "public",
+        "start": 9.42,
+        "end": 9.74
+      },
+      {
+        "word": "speaking",
+        "clean": "speaking",
+        "start": 9.74,
+        "end": 10.28
+      },
+      {
+        "word": "coaching",
+        "clean": "coaching",
+        "start": 10.28,
+        "end": 10.9
+      },
+      {
+        "word": "and",
+        "clean": "and",
+        "start": 10.9,
+        "end": 12.18
+      },
+      {
+        "word": "the",
+        "clean": "the",
+        "start": 12.18,
+        "end": 13.14
+      },
+      {
+        "word": "current",
+        "clean": "current",
+        "start": 13.14,
+        "end": 13.46
+      },
+      {
+        "word": "market",
+        "clean": "market",
+        "start": 13.46,
+        "end": 13.9
+      },
+      {
+        "word": "is",
+        "clean": "is",
+        "start": 13.9,
+        "end": 15.24
+      },
+      {
+        "word": "way",
+        "clean": "way",
+        "start": 15.24,
+        "end": 15.48
+      },
+      {
+        "word": "too",
+        "clean": "too",
+        "start": 15.48,
+        "end": 16.78
+      },
+      {
+        "word": "expensive",
+        "clean": "expensive",
+        "start": 16.78,
+        "end": 17.18
+      },
+      {
+        "word": "for",
+        "clean": "for",
+        "start": 17.18,
+        "end": 17.64
+      },
+      {
+        "word": "students",
+        "clean": "students",
+        "start": 17.64,
+        "end": 18.08
+      },
+      {
+        "word": "because",
+        "clean": "because",
+        "start": 18.08,
+        "end": 18.54
+      },
+      {
+        "word": "human",
+        "clean": "human",
+        "start": 18.54,
+        "end": 19.08
+      },
+      {
+        "word": "coaches",
+        "clean": "coaches",
+        "start": 19.08,
+        "end": 19.36
+      },
+      {
+        "word": "cost",
+        "clean": "cost",
+        "start": 19.36,
+        "end": 19.66
+      },
+      {
+        "word": "a",
+        "clean": "a",
+        "start": 19.66,
+        "end": 19.8
+      },
+      {
+        "word": "lot",
+        "clean": "lot",
+        "start": 19.8,
+        "end": 19.94
+      },
+      {
+        "word": "of",
+        "clean": "of",
+        "start": 19.94,
+        "end": 20.02
+      },
+      {
+        "word": "money",
+        "clean": "money",
+        "start": 20.02,
+        "end": 20.32
+      },
+      {
+        "word": "and",
+        "clean": "and",
+        "start": 20.32,
+        "end": 21.5
+      },
+      {
+        "word": "if",
+        "clean": "if",
+        "start": 21.5,
+        "end": 21.62
+      },
+      {
+        "word": "you",
+        "clean": "you",
+        "start": 21.62,
+        "end": 21.74
+      },
+      {
+        "word": "try",
+        "clean": "try",
+        "start": 21.74,
+        "end": 21.9
+      },
+      {
+        "word": "to",
+        "clean": "to",
+        "start": 21.9,
+        "end": 22.04
+      },
+      {
+        "word": "practice",
+        "clean": "practice",
+        "start": 22.04,
+        "end": 22.24
+      },
+      {
+        "word": "by",
+        "clean": "by",
+        "start": 22.24,
+        "end": 22.58
+      },
+      {
+        "word": "yourself,",
+        "clean": "yourself",
+        "start": 22.58,
+        "end": 22.96
+      },
+      {
+        "word": "it's",
+        "clean": "it's",
+        "start": 23.06,
+        "end": 23.22
+      },
+      {
+        "word": "like",
+        "clean": "like",
+        "start": 23.22,
+        "end": 23.44
+      },
+      {
+        "word": "really",
+        "clean": "really",
+        "start": 23.44,
+        "end": 24.52
+      },
+      {
+        "word": "hard",
+        "clean": "hard",
+        "start": 24.52,
+        "end": 24.94
+      },
+      {
+        "word": "to",
+        "clean": "to",
+        "start": 24.94,
+        "end": 25.24
+      },
+      {
+        "word": "see",
+        "clean": "see",
+        "start": 25.24,
+        "end": 25.42
+      },
+      {
+        "word": "your",
+        "clean": "your",
+        "start": 25.42,
+        "end": 25.58
+      },
+      {
+        "word": "own",
+        "clean": "own",
+        "start": 25.58,
+        "end": 25.72
+      },
+      {
+        "word": "mistakes",
+        "clean": "mistakes",
+        "start": 25.72,
+        "end": 26.04
+      },
+      {
+        "word": "or",
+        "clean": "or",
+        "start": 26.04,
+        "end": 26.34
+      },
+      {
+        "word": "check",
+        "clean": "check",
+        "start": 26.34,
+        "end": 26.52
+      },
+      {
+        "word": "your",
+        "clean": "your",
+        "start": 26.52,
+        "end": 26.72
+      },
+      {
+        "word": "body",
+        "clean": "body",
+        "start": 26.72,
+        "end": 26.9
+      },
+      {
+        "word": "language.",
+        "clean": "language",
+        "start": 26.9,
+        "end": 27.2
+      },
+      {
+        "word": "So,",
+        "clean": "so",
+        "start": 27.2,
+        "end": 27.62
+      },
+      {
+        "word": "yeah,",
+        "clean": "yeah",
+        "start": 27.68,
+        "end": 27.88
+      },
+      {
+        "word": "that's",
+        "clean": "that's",
+        "start": 28.74,
+        "end": 29.26
+      },
+      {
+        "word": "why",
+        "clean": "why",
+        "start": 29.26,
+        "end": 29.38
+      },
+      {
+        "word": "we",
+        "clean": "we",
+        "start": 29.38,
+        "end": 29.52
+      },
+      {
+        "word": "built",
+        "clean": "built",
+        "start": 29.52,
+        "end": 29.74
+      },
+      {
+        "word": "this",
+        "clean": "this",
+        "start": 29.74,
+        "end": 30.0
+      },
+      {
+        "word": "tool",
+        "clean": "tool",
+        "start": 30.0,
+        "end": 31.16
+      },
+      {
+        "word": "to",
+        "clean": "to",
+        "start": 31.16,
+        "end": 31.44
+      },
+      {
+        "word": "automate",
+        "clean": "automate",
+        "start": 31.44,
+        "end": 31.84
+      },
+      {
+        "word": "the",
+        "clean": "the",
+        "start": 31.84,
+        "end": 32.02
+      },
+      {
+        "word": "scoring.",
+        "clean": "scoring",
+        "start": 32.02,
+        "end": 32.3
+      }
+    ],
+    "pitch_timeline_sample": [
+      0.0,
+      0.0,
+      229.0776735576574,
+      255.6500291307247,
+      237.15608026942812,
+      226.44649206156825
+    ]
+  }
+}

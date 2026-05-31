@@ -1,0 +1,651 @@
+{
+  "analysis_status": "Success",
+  "summary": {
+    "overall_label": "Developing",
+    "headline": "Main delivery issues: too flat, some fillers.",
+    "top_actions": [
+      "Add more pitch contrast on important words so the message sounds less monotone.",
+      "Replace filler words with brief silent pauses."
+    ]
+  },
+  "baseline_profile": {
+    "archetype": "Folder Benchmark Rehearsal",
+    "dataset_source": "Folder benchmark: base.m4a",
+    "calibrated_metrics": {
+      "target_wpm": 135.2,
+      "target_pitch_std": 78.24,
+      "wpm_tolerance_margin": 12.0,
+      "pitch_tolerance_margin": 8.0
+    }
+  },
+  "performance_scores": {
+    "pacing_alignment": 100.0,
+    "vocal_intonation_variety": 85.0,
+    "word_choice_efficiency": 90.0,
+    "aggregate_vocal_rating": 92.0
+  },
+  "readable_metrics": {
+    "pace": {
+      "label": "On target",
+      "value": 138.1,
+      "unit": "words per minute",
+      "target_range": "123.2-147.2 words per minute",
+      "score": 100.0,
+      "meaning": "Your speaking speed sits inside the calibrated Singapore presentation range."
+    },
+    "intonation": {
+      "label": "Too flat",
+      "value": 66.24,
+      "unit": "pitch standard deviation in Hz",
+      "target_range": "70.2-86.2 Hz pitch standard deviation",
+      "score": 85.0,
+      "meaning": "Your pitch variation is below the target range, so the delivery may sound less expressive."
+    },
+    "fillers": {
+      "label": "Some fillers",
+      "value": 1,
+      "unit": "filler words",
+      "target_range": "0-2 per 100 words",
+      "score": 90.0,
+      "meaning": "You used a few filler words. They are noticeable, but not yet dominating the delivery."
+    }
+  },
+  "extracted_telemetry": {
+    "measured_wpm": 138.1,
+    "measured_pitch_std_hz": 66.24,
+    "total_filler_count": 1
+  },
+  "pauses_timeline": [],
+  "actionable_coaching_cards": [
+    "Outstanding verbal performance alignment!"
+  ],
+  "transcript": {
+    "text": "Our prototype focuses on one practical goal, helping students understand how their spoken delivery sounds before they present. The audio engine listens for pacing, vocal variation and filler words then converts those measurements into feedback that is easier to act on. Instead of showing only raw numbers, the report explains whether the speaker is on target, rushing, too flat or relying too much on repeated filler phrases. For this stage, the benchmark is based on a strong sample recording so we can test whether future recordings feel close to that standard.",
+    "word_count": 91
+  },
+  "speech_issues": {
+    "filler_words": [
+      {
+        "phrase": "so",
+        "timestamp": 34.02,
+        "issue": "Filler word",
+        "suggestion": "Replace this with a brief silent pause or move directly to the next idea."
+      }
+    ],
+    "pause_flags": [],
+    "pacing_flags": [],
+    "intonation_flags": [
+      {
+        "phrase": "Our prototype focuses on one practical goal, helping",
+        "timestamp": 0.0,
+        "issue": "Too flat",
+        "meaning": "Your pitch variation is below the target range, so the delivery may sound less expressive.",
+        "suggestion": "Mark the key words in this phrase and vary pitch on those emphasis points."
+      }
+    ]
+  },
+  "raw_metrics": {
+    "wpm": 138.1,
+    "pitch_variance_std": 66.24,
+    "is_monotone_delivery": false
+  },
+  "debug": {
+    "word_timeline": [
+      {
+        "word": "Our",
+        "clean": "our",
+        "start": 0.0,
+        "end": 0.5
+      },
+      {
+        "word": "prototype",
+        "clean": "prototype",
+        "start": 0.5,
+        "end": 0.94
+      },
+      {
+        "word": "focuses",
+        "clean": "focuses",
+        "start": 0.94,
+        "end": 1.58
+      },
+      {
+        "word": "on",
+        "clean": "on",
+        "start": 1.58,
+        "end": 1.92
+      },
+      {
+        "word": "one",
+        "clean": "one",
+        "start": 1.92,
+        "end": 2.16
+      },
+      {
+        "word": "practical",
+        "clean": "practical",
+        "start": 2.16,
+        "end": 2.68
+      },
+      {
+        "word": "goal,",
+        "clean": "goal",
+        "start": 2.68,
+        "end": 3.16
+      },
+      {
+        "word": "helping",
+        "clean": "helping",
+        "start": 3.8,
+        "end": 4.02
+      },
+      {
+        "word": "students",
+        "clean": "students",
+        "start": 4.02,
+        "end": 4.42
+      },
+      {
+        "word": "understand",
+        "clean": "understand",
+        "start": 4.42,
+        "end": 4.98
+      },
+      {
+        "word": "how",
+        "clean": "how",
+        "start": 4.98,
+        "end": 5.38
+      },
+      {
+        "word": "their",
+        "clean": "their",
+        "start": 5.38,
+        "end": 5.58
+      },
+      {
+        "word": "spoken",
+        "clean": "spoken",
+        "start": 5.58,
+        "end": 5.84
+      },
+      {
+        "word": "delivery",
+        "clean": "delivery",
+        "start": 5.84,
+        "end": 6.28
+      },
+      {
+        "word": "sounds",
+        "clean": "sounds",
+        "start": 6.28,
+        "end": 6.8
+      },
+      {
+        "word": "before",
+        "clean": "before",
+        "start": 6.8,
+        "end": 7.22
+      },
+      {
+        "word": "they",
+        "clean": "they",
+        "start": 7.22,
+        "end": 7.44
+      },
+      {
+        "word": "present.",
+        "clean": "present",
+        "start": 7.44,
+        "end": 7.74
+      },
+      {
+        "word": "The",
+        "clean": "the",
+        "start": 8.84,
+        "end": 8.92
+      },
+      {
+        "word": "audio",
+        "clean": "audio",
+        "start": 8.92,
+        "end": 9.18
+      },
+      {
+        "word": "engine",
+        "clean": "engine",
+        "start": 9.18,
+        "end": 9.6
+      },
+      {
+        "word": "listens",
+        "clean": "listens",
+        "start": 9.6,
+        "end": 10.1
+      },
+      {
+        "word": "for",
+        "clean": "for",
+        "start": 10.1,
+        "end": 10.46
+      },
+      {
+        "word": "pacing,",
+        "clean": "pacing",
+        "start": 10.46,
+        "end": 10.78
+      },
+      {
+        "word": "vocal",
+        "clean": "vocal",
+        "start": 11.66,
+        "end": 11.68
+      },
+      {
+        "word": "variation",
+        "clean": "variation",
+        "start": 11.68,
+        "end": 12.1
+      },
+      {
+        "word": "and",
+        "clean": "and",
+        "start": 12.1,
+        "end": 12.84
+      },
+      {
+        "word": "filler",
+        "clean": "filler",
+        "start": 12.84,
+        "end": 13.1
+      },
+      {
+        "word": "words",
+        "clean": "words",
+        "start": 13.1,
+        "end": 13.38
+      },
+      {
+        "word": "then",
+        "clean": "then",
+        "start": 13.38,
+        "end": 14.08
+      },
+      {
+        "word": "converts",
+        "clean": "converts",
+        "start": 14.08,
+        "end": 14.48
+      },
+      {
+        "word": "those",
+        "clean": "those",
+        "start": 14.48,
+        "end": 14.9
+      },
+      {
+        "word": "measurements",
+        "clean": "measurements",
+        "start": 14.9,
+        "end": 15.36
+      },
+      {
+        "word": "into",
+        "clean": "into",
+        "start": 15.36,
+        "end": 15.88
+      },
+      {
+        "word": "feedback",
+        "clean": "feedback",
+        "start": 15.88,
+        "end": 16.2
+      },
+      {
+        "word": "that",
+        "clean": "that",
+        "start": 16.2,
+        "end": 16.64
+      },
+      {
+        "word": "is",
+        "clean": "is",
+        "start": 16.64,
+        "end": 16.8
+      },
+      {
+        "word": "easier",
+        "clean": "easier",
+        "start": 16.8,
+        "end": 17.18
+      },
+      {
+        "word": "to",
+        "clean": "to",
+        "start": 17.18,
+        "end": 17.38
+      },
+      {
+        "word": "act",
+        "clean": "act",
+        "start": 17.38,
+        "end": 17.58
+      },
+      {
+        "word": "on.",
+        "clean": "on",
+        "start": 17.58,
+        "end": 18.06
+      },
+      {
+        "word": "Instead",
+        "clean": "instead",
+        "start": 18.54,
+        "end": 19.2
+      },
+      {
+        "word": "of",
+        "clean": "of",
+        "start": 19.2,
+        "end": 19.46
+      },
+      {
+        "word": "showing",
+        "clean": "showing",
+        "start": 19.46,
+        "end": 19.74
+      },
+      {
+        "word": "only",
+        "clean": "only",
+        "start": 19.74,
+        "end": 20.12
+      },
+      {
+        "word": "raw",
+        "clean": "raw",
+        "start": 20.12,
+        "end": 20.34
+      },
+      {
+        "word": "numbers,",
+        "clean": "numbers",
+        "start": 20.34,
+        "end": 20.82
+      },
+      {
+        "word": "the",
+        "clean": "the",
+        "start": 21.42,
+        "end": 21.48
+      },
+      {
+        "word": "report",
+        "clean": "report",
+        "start": 21.48,
+        "end": 21.7
+      },
+      {
+        "word": "explains",
+        "clean": "explains",
+        "start": 21.7,
+        "end": 22.34
+      },
+      {
+        "word": "whether",
+        "clean": "whether",
+        "start": 22.34,
+        "end": 22.76
+      },
+      {
+        "word": "the",
+        "clean": "the",
+        "start": 22.76,
+        "end": 22.98
+      },
+      {
+        "word": "speaker",
+        "clean": "speaker",
+        "start": 22.98,
+        "end": 23.34
+      },
+      {
+        "word": "is",
+        "clean": "is",
+        "start": 23.34,
+        "end": 23.58
+      },
+      {
+        "word": "on",
+        "clean": "on",
+        "start": 23.58,
+        "end": 23.74
+      },
+      {
+        "word": "target,",
+        "clean": "target",
+        "start": 23.74,
+        "end": 24.24
+      },
+      {
+        "word": "rushing,",
+        "clean": "rushing",
+        "start": 24.6,
+        "end": 24.98
+      },
+      {
+        "word": "too",
+        "clean": "too",
+        "start": 25.54,
+        "end": 25.58
+      },
+      {
+        "word": "flat",
+        "clean": "flat",
+        "start": 25.58,
+        "end": 25.9
+      },
+      {
+        "word": "or",
+        "clean": "or",
+        "start": 25.9,
+        "end": 26.42
+      },
+      {
+        "word": "relying",
+        "clean": "relying",
+        "start": 26.42,
+        "end": 26.62
+      },
+      {
+        "word": "too",
+        "clean": "too",
+        "start": 26.62,
+        "end": 27.04
+      },
+      {
+        "word": "much",
+        "clean": "much",
+        "start": 27.04,
+        "end": 27.36
+      },
+      {
+        "word": "on",
+        "clean": "on",
+        "start": 27.36,
+        "end": 27.96
+      },
+      {
+        "word": "repeated",
+        "clean": "repeated",
+        "start": 27.96,
+        "end": 28.32
+      },
+      {
+        "word": "filler",
+        "clean": "filler",
+        "start": 28.32,
+        "end": 28.78
+      },
+      {
+        "word": "phrases.",
+        "clean": "phrases",
+        "start": 28.78,
+        "end": 29.14
+      },
+      {
+        "word": "For",
+        "clean": "for",
+        "start": 30.3,
+        "end": 30.5
+      },
+      {
+        "word": "this",
+        "clean": "this",
+        "start": 30.5,
+        "end": 30.7
+      },
+      {
+        "word": "stage,",
+        "clean": "stage",
+        "start": 30.7,
+        "end": 31.04
+      },
+      {
+        "word": "the",
+        "clean": "the",
+        "start": 31.48,
+        "end": 31.54
+      },
+      {
+        "word": "benchmark",
+        "clean": "benchmark",
+        "start": 31.54,
+        "end": 31.86
+      },
+      {
+        "word": "is",
+        "clean": "is",
+        "start": 31.86,
+        "end": 32.32
+      },
+      {
+        "word": "based",
+        "clean": "based",
+        "start": 32.32,
+        "end": 32.54
+      },
+      {
+        "word": "on",
+        "clean": "on",
+        "start": 32.54,
+        "end": 32.82
+      },
+      {
+        "word": "a",
+        "clean": "a",
+        "start": 32.82,
+        "end": 32.94
+      },
+      {
+        "word": "strong",
+        "clean": "strong",
+        "start": 32.94,
+        "end": 33.2
+      },
+      {
+        "word": "sample",
+        "clean": "sample",
+        "start": 33.2,
+        "end": 33.56
+      },
+      {
+        "word": "recording",
+        "clean": "recording",
+        "start": 33.56,
+        "end": 34.02
+      },
+      {
+        "word": "so",
+        "clean": "so",
+        "start": 34.02,
+        "end": 34.72
+      },
+      {
+        "word": "we",
+        "clean": "we",
+        "start": 34.72,
+        "end": 34.9
+      },
+      {
+        "word": "can",
+        "clean": "can",
+        "start": 34.9,
+        "end": 35.06
+      },
+      {
+        "word": "test",
+        "clean": "test",
+        "start": 35.06,
+        "end": 35.32
+      },
+      {
+        "word": "whether",
+        "clean": "whether",
+        "start": 35.32,
+        "end": 35.56
+      },
+      {
+        "word": "future",
+        "clean": "future",
+        "start": 35.56,
+        "end": 36.14
+      },
+      {
+        "word": "recordings",
+        "clean": "recordings",
+        "start": 36.14,
+        "end": 36.66
+      },
+      {
+        "word": "feel",
+        "clean": "feel",
+        "start": 36.66,
+        "end": 37.06
+      },
+      {
+        "word": "close",
+        "clean": "close",
+        "start": 37.06,
+        "end": 37.78
+      },
+      {
+        "word": "to",
+        "clean": "to",
+        "start": 37.78,
+        "end": 38.1
+      },
+      {
+        "word": "that",
+        "clean": "that",
+        "start": 38.1,
+        "end": 38.24
+      },
+      {
+        "word": "standard.",
+        "clean": "standard",
+        "start": 38.24,
+        "end": 38.54
+      }
+    ],
+    "pitch_timeline_sample": [
+      70.50692450564009,
+      235.7901617579845,
+      242.6993408760242,
+      280.40333801023763,
+      383.04224785029453,
+      383.04224785029453,
+      0.0
+    ]
+  }
+}

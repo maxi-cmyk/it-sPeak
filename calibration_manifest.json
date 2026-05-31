@@ -1,0 +1,17 @@
+{
+  "voice-testing1": {
+    "base": "strong",
+    "script1": "flawed",
+    "script2": "better"
+  },
+  "voice-testing2": {
+    "base": "strong",
+    "script1": "flawed",
+    "script2": "better"
+  },
+  "voice-testing3": {
+    "base": "strong",
+    "script1": "flawed",
+    "script2": "better"
+  }
+}

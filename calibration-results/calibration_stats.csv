@@ -1,0 +1,10 @@
+folder,clip,role,wpm,pitch_std,filler_count,word_count,filler_per_100,pause_count,hesitation_gap_count,strategic_pause_count,average_pause_duration,longest_pause_duration,wpm_delta_from_base,pitch_delta_from_base,filler_per_100_delta_from_base,overall_label,headline,pace_label,intonation_label,filler_label,aggregate_score,pacing_score,intonation_score,word_choice_score
+voice-testing1,base,benchmark,160.7,36.37,0,86,0.0,0,0,0,0.0,0.0,0.0,0.0,0.0,Strong,Delivery is aligned with the current benchmark.,On target,On target,Clean,100.0,100.0,100.0,100.0
+voice-testing1,script1,test,156.6,55.74,6,68,8.82,0,0,0,0.0,0.0,-4.1,19.37,8.82,Developing,"Main delivery issues: over-varied, distracting fillers.",On target,Over-varied,Distracting fillers,81.9,100.0,68.7,75.0
+voice-testing1,script2,test,156.7,54.81,1,89,1.12,0,0,0,0.0,0.0,-4.0,18.44,1.12,Developing,"Main delivery issues: over-varied, some fillers.",On target,Over-varied,Some fillers,87.9,100.0,71.3,90.0
+voice-testing2,base,benchmark,135.2,78.24,0,86,0.0,2,0,2,2.26,2.94,0.0,0.0,0.0,Strong,Delivery is aligned with the current benchmark.,On target,On target,Clean,100.0,100.0,100.0,100.0
+voice-testing2,script1,test,110.4,68.32,6,66,9.09,0,0,0,0.0,0.0,-24.8,-9.92,9.09,Developing,"Main delivery issues: too slow, too flat, distracting fillers.",Too slow,Too flat,Distracting fillers,81.5,85.0,85.0,75.0
+voice-testing2,script2,test,138.1,66.24,1,91,1.1,0,0,0,0.0,0.0,2.9,-12.0,1.1,Developing,"Main delivery issues: too flat, some fillers.",On target,Too flat,Some fillers,92.0,100.0,85.0,90.0
+voice-testing3,base,benchmark,152.2,73.39,0,86,0.0,0,0,0,0.0,0.0,0.0,0.0,0.0,Strong,Delivery is aligned with the current benchmark.,On target,On target,Clean,100.0,100.0,100.0,100.0
+voice-testing3,script1,test,114.1,65.31,5,65,7.69,0,0,0,0.0,0.0,-38.1,-8.08,7.69,Developing,"Main delivery issues: too slow, too flat, distracting fillers.",Too slow,Too flat,Distracting fillers,80.8,82.9,85.0,75.0
+voice-testing3,script2,test,135.5,79.84,1,92,1.09,0,0,0,0.0,0.0,-16.7,6.45,1.09,Developing,"Main delivery issues: too slow, some fillers.",Too slow,On target,Some fillers,91.2,85.0,100.0,90.0
