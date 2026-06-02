@@ -20,7 +20,3 @@ After `voice-testing4` is recorded and processed, use it as a holdout check befo
 [ ] Add unit tests for segment splitting, per-segment issue flags, and holdout evaluator behavior.
 [ ] Verify with `python3 -m unittest discover -s tests`, then rerun the full voice-testing pipeline.
 
-## Open questions
-- Should `script2` always mean "better", or do you want the manifest to support arbitrary labels per folder?
-- What minimum score gap should count as convincing after `voice-testing4`: keep `5.0`, or raise it to `8.0`?
-- Should segment-level pitch scoring be attempted now, or should segment feedback start with WPM, fillers, and pauses only?
