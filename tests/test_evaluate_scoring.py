@@ -52,6 +52,26 @@ class ScoringEvaluationTests(unittest.TestCase):
         self.assertEqual(result["summary"]["ranking_failures"], 1)
         self.assertEqual(result["folders"][0]["ranking_checks"][1]["status"], "fail")
 
+    def test_evaluate_rows_marks_holdout_folders(self):
+        manifest = {
+            "voice-testing4": {
+                "base": "strong",
+                "script1": "flawed",
+                "script2": "better",
+            }
+        }
+        rows = [
+            {"folder": "voice-testing4", "clip": "base", "aggregate_score": 98.0, "filler_label": "Clean"},
+            {"folder": "voice-testing4", "clip": "script1", "aggregate_score": 78.0, "filler_label": "Distracting fillers"},
+            {"folder": "voice-testing4", "clip": "script2", "aggregate_score": 89.0, "filler_label": "Clean"},
+        ]
+
+        result = evaluator.evaluate_rows(rows, manifest, holdout_folders={"voice-testing4"})
+
+        self.assertEqual(result["summary"]["holdout_folders"], 1)
+        self.assertEqual(result["folders"][0]["validation_role"], "holdout")
+        self.assertEqual(result["folders"][0]["ranking_checks"][0]["status"], "pass")
+
     def test_write_outputs_creates_json_and_text_report(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir)

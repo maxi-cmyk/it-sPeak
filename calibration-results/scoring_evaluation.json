@@ -4,11 +4,13 @@
     "ranking_failures": 0,
     "warnings": 0,
     "missing_clips": 0,
-    "minimum_score_gap": 5.0
+    "minimum_score_gap": 5.0,
+    "holdout_folders": 0
   },
   "folders": [
     {
       "folder": "voice-testing1",
+      "validation_role": "calibration",
       "missing_clips": [],
       "ranking_checks": [
         {
@@ -48,6 +50,7 @@
     },
     {
       "folder": "voice-testing2",
+      "validation_role": "calibration",
       "missing_clips": [],
       "ranking_checks": [
         {
@@ -87,6 +90,7 @@
     },
     {
       "folder": "voice-testing3",
+      "validation_role": "calibration",
       "missing_clips": [],
       "ranking_checks": [
         {

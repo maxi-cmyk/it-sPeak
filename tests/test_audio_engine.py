@@ -471,6 +471,99 @@ class AudioFormatTests(unittest.TestCase):
         self.assertEqual(issues["pacing_flags"][0]["issue"], "Too fast")
         self.assertEqual(issues["intonation_flags"][0]["issue"], "Too flat")
 
+    def test_split_speech_segments_uses_sentence_boundaries_and_word_timestamps(self):
+        words = [
+            {"word": "First", "clean": "first", "start": 0.0, "end": 0.3},
+            {"word": "idea.", "clean": "idea", "start": 0.4, "end": 0.8},
+            {"word": "Second", "clean": "second", "start": 1.6, "end": 1.9},
+            {"word": "point?", "clean": "point", "start": 2.0, "end": 2.4},
+        ]
+
+        segments = audio_engine.split_speech_segments(words)
+
+        self.assertEqual(len(segments), 2)
+        self.assertEqual(segments[0]["phrase"], "First idea.")
+        self.assertEqual(segments[0]["start"], 0.0)
+        self.assertEqual(segments[0]["end"], 0.8)
+        self.assertEqual(segments[0]["word_count"], 2)
+        self.assertEqual(segments[1]["phrase"], "Second point?")
+        self.assertEqual(segments[1]["start"], 1.6)
+        self.assertEqual(segments[1]["end"], 2.4)
+
+    def test_build_segment_metrics_counts_fillers_pauses_wpm_and_pitch_variation(self):
+        words = [
+            {"word": "So,", "clean": "so", "start": 0.0, "end": 0.2},
+            {"word": "first.", "clean": "first", "start": 0.3, "end": 0.6},
+            {"word": "Basically", "clean": "basically", "start": 1.0, "end": 1.2},
+            {"word": "next", "clean": "next", "start": 2.9, "end": 3.1},
+            {"word": "idea.", "clean": "idea", "start": 3.2, "end": 3.5},
+        ]
+        pauses = [
+            {"timestamp": 1.2, "duration": 1.7, "classification": "Hesitation Gap"},
+        ]
+        pitch_timeline = [100.0, 110.0, 120.0, 130.0] * 40
+
+        segments = audio_engine.build_segment_metrics(words, pauses, pitch_timeline, sample_rate=16000)
+
+        self.assertEqual(len(segments), 2)
+        self.assertEqual(segments[0]["filler_count"], 1)
+        self.assertEqual(segments[0]["wpm"], 200.0)
+        self.assertEqual(segments[0]["pause_gap_count"], 0)
+        self.assertIsNotNone(segments[0]["pitch_variance_std"])
+        self.assertEqual(segments[1]["filler_count"], 1)
+        self.assertEqual(segments[1]["pause_gap_count"], 1)
+        self.assertEqual(segments[1]["pause_gaps"][0]["classification"], "Hesitation Gap")
+
+    def test_speech_issues_use_segment_specific_pacing_and_intonation_flags(self):
+        words = [
+            {"word": "Opening", "clean": "opening", "start": 0.0, "end": 0.2},
+            {"word": "rush.", "clean": "rush", "start": 0.3, "end": 0.5},
+            {"word": "Flat", "clean": "flat", "start": 3.0, "end": 3.4},
+            {"word": "close.", "clean": "close", "start": 3.5, "end": 4.0},
+        ]
+        segment_metrics = [
+            {
+                "phrase": "Opening rush.",
+                "start": 0.0,
+                "end": 0.5,
+                "word_count": 2,
+                "wpm": 240.0,
+                "filler_count": 0,
+                "pitch_variance_std": 35.0,
+                "pause_gap_count": 0,
+                "pause_gaps": [],
+            },
+            {
+                "phrase": "Flat close.",
+                "start": 3.0,
+                "end": 4.0,
+                "word_count": 2,
+                "wpm": 120.0,
+                "filler_count": 0,
+                "pitch_variance_std": 4.0,
+                "pause_gap_count": 0,
+                "pause_gaps": [],
+            },
+        ]
+        calibrated_metrics = {
+            "target_wpm": 120.0,
+            "target_pitch_std": 30.0,
+            "wpm_tolerance_margin": 20.0,
+            "pitch_tolerance_margin": 10.0,
+        }
+
+        issues = audio_engine.build_speech_issues(
+            words,
+            [],
+            segment_metrics=segment_metrics,
+            calibrated_metrics=calibrated_metrics,
+        )
+
+        self.assertEqual(issues["pacing_flags"][0]["phrase"], "Opening rush.")
+        self.assertEqual(issues["pacing_flags"][0]["issue"], "Too fast")
+        self.assertEqual(issues["intonation_flags"][0]["phrase"], "Flat close.")
+        self.assertEqual(issues["intonation_flags"][0]["issue"], "Too flat")
+
     def test_current_profile_uses_good_test_as_benchmark(self):
         project_root = MODULE_PATH.parent
         profile = json.loads((project_root / "calibrated_singapore_targets.json").read_text())

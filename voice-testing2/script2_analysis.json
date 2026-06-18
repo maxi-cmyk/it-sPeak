@@ -73,14 +73,56 @@
       }
     ],
     "pause_flags": [],
-    "pacing_flags": [],
+    "pacing_flags": [
+      {
+        "phrase": "The audio engine listens for pacing, vocal variation and filler words then converts those measurements into feedback that is easier to act on.",
+        "timestamp": 8.84,
+        "issue": "Too fast",
+        "value": 149.7,
+        "meaning": "This phrase is faster than the calibrated target range, which can make the idea feel rushed.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      },
+      {
+        "phrase": "For this stage, the benchmark is based on a strong sample recording so we can test whether future recordings feel close to that standard.",
+        "timestamp": 30.3,
+        "issue": "Too fast",
+        "value": 174.8,
+        "meaning": "This phrase is faster than the calibrated target range, which can make the idea feel rushed.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      }
+    ],
     "intonation_flags": [
       {
-        "phrase": "Our prototype focuses on one practical goal, helping",
+        "phrase": "Our prototype focuses on one practical goal, helping students understand how their spoken delivery sounds before they present.",
         "timestamp": 0.0,
         "issue": "Too flat",
-        "meaning": "Your pitch variation is below the target range, so the delivery may sound less expressive.",
-        "suggestion": "Mark the key words in this phrase and vary pitch on those emphasis points."
+        "value": 55.72,
+        "meaning": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
+      },
+      {
+        "phrase": "The audio engine listens for pacing, vocal variation and filler words then converts those measurements into feedback that is easier to act on.",
+        "timestamp": 8.84,
+        "issue": "Too flat",
+        "value": 48.91,
+        "meaning": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
+      },
+      {
+        "phrase": "Instead of showing only raw numbers, the report explains whether the speaker is on target, rushing, too flat or relying too much on repeated filler phrases.",
+        "timestamp": 18.54,
+        "issue": "Too flat",
+        "value": 55.22,
+        "meaning": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
+      },
+      {
+        "phrase": "For this stage, the benchmark is based on a strong sample recording so we can test whether future recordings feel close to that standard.",
+        "timestamp": 30.3,
+        "issue": "Too flat",
+        "value": 39.44,
+        "meaning": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
       }
     ]
   },
@@ -636,6 +678,52 @@
         "clean": "standard",
         "start": 38.24,
         "end": 38.54
+      }
+    ],
+    "segment_metrics": [
+      {
+        "phrase": "Our prototype focuses on one practical goal, helping students understand how their spoken delivery sounds before they present.",
+        "start": 0.0,
+        "end": 7.74,
+        "word_count": 18,
+        "wpm": 139.5,
+        "filler_count": 0,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 55.72
+      },
+      {
+        "phrase": "The audio engine listens for pacing, vocal variation and filler words then converts those measurements into feedback that is easier to act on.",
+        "start": 8.84,
+        "end": 18.06,
+        "word_count": 23,
+        "wpm": 149.7,
+        "filler_count": 0,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 48.91
+      },
+      {
+        "phrase": "Instead of showing only raw numbers, the report explains whether the speaker is on target, rushing, too flat or relying too much on repeated filler phrases.",
+        "start": 18.54,
+        "end": 29.14,
+        "word_count": 26,
+        "wpm": 147.2,
+        "filler_count": 0,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 55.22
+      },
+      {
+        "phrase": "For this stage, the benchmark is based on a strong sample recording so we can test whether future recordings feel close to that standard.",
+        "start": 30.3,
+        "end": 38.54,
+        "word_count": 24,
+        "wpm": 174.8,
+        "filler_count": 1,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 39.44
       }
     ],
     "pitch_timeline_sample": [

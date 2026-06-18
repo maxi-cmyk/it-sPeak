@@ -12,7 +12,17 @@ collector = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(collector)
 
 
-def write_analysis(path, wpm, pitch_std, filler_count, word_count, overall_label="Strong", pauses=None):
+def write_analysis(
+    path,
+    wpm,
+    pitch_std,
+    filler_count,
+    word_count,
+    overall_label="Strong",
+    pauses=None,
+    speech_issues=None,
+    segment_metrics=None,
+):
     path.write_text(json.dumps({
         "summary": {
             "overall_label": overall_label,
@@ -41,6 +51,15 @@ def write_analysis(path, wpm, pitch_std, filler_count, word_count, overall_label
             "word_count": word_count,
         },
         "pauses_timeline": pauses or [],
+        "speech_issues": speech_issues or {
+            "filler_words": [],
+            "pause_flags": [],
+            "pacing_flags": [],
+            "intonation_flags": [],
+        },
+        "debug": {
+            "segment_metrics": segment_metrics or [],
+        },
     }))
 
 
@@ -82,6 +101,47 @@ class CalibrationStatsTests(unittest.TestCase):
             self.assertEqual(rows[1]["average_pause_duration"], 1.88)
             self.assertEqual(rows[1]["longest_pause_duration"], 2.25)
 
+    def test_collect_rows_adds_segment_issue_counts(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            folder = root / "voice-testing1"
+            folder.mkdir()
+            write_analysis(folder / "base_analysis.json", 150.0, 40.0, 0, 100)
+            write_analysis(
+                folder / "script1_analysis.json",
+                180.0,
+                20.0,
+                3,
+                90,
+                speech_issues={
+                    "filler_words": [{"phrase": "um"}],
+                    "pause_flags": [],
+                    "pacing_flags": [
+                        {"issue": "Too fast", "phrase": "rushed segment"},
+                        {"issue": "Too slow", "phrase": "dragging segment"},
+                    ],
+                    "intonation_flags": [
+                        {"issue": "Too flat", "phrase": "flat segment"},
+                        {"issue": "Over-varied", "phrase": "spiky segment"},
+                    ],
+                },
+                segment_metrics=[
+                    {"filler_count": 1},
+                    {"filler_count": 0},
+                    {"filler_count": 2},
+                ],
+            )
+
+            rows = collector.collect_rows(root)
+            script_row = rows[1]
+
+            self.assertEqual(script_row["segment_count"], 3)
+            self.assertEqual(script_row["rushed_segment_count"], 1)
+            self.assertEqual(script_row["slow_segment_count"], 1)
+            self.assertEqual(script_row["flat_segment_count"], 1)
+            self.assertEqual(script_row["over_varied_segment_count"], 1)
+            self.assertEqual(script_row["filler_segment_count"], 2)
+
     def test_write_outputs_creates_csv_and_json(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir)
@@ -111,6 +171,12 @@ class CalibrationStatsTests(unittest.TestCase):
                 "pacing_score": 90.0,
                 "intonation_score": 80.0,
                 "word_choice_score": 70.0,
+                "segment_count": 0,
+                "rushed_segment_count": 0,
+                "slow_segment_count": 0,
+                "flat_segment_count": 0,
+                "over_varied_segment_count": 0,
+                "filler_segment_count": 0,
             }]
 
             csv_path, json_path = collector.write_outputs(rows, output_dir)

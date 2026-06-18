@@ -36,6 +36,8 @@ SUPPORTED_AUDIO_EXTENSIONS = {".mp3", ".m4a"}
 DEFAULT_SCORING_PROFILE_PATH = Path(__file__).with_name("calibrated_singapore_targets.json")
 DEFAULT_SAMPLE_AUDIO_FILENAME = "sample_presentation.mp3"
 DEFAULT_FILLERS = ["um", "uh", "like", "so", "basically", "actually"]
+PITCH_FRAME_HOP_LENGTH = 512
+MIN_SEGMENT_VOICED_PITCHES = 3
 
 def is_supported_audio_file(file_path):
     return Path(file_path).suffix.lower() in SUPPORTED_AUDIO_EXTENSIONS
@@ -203,6 +205,8 @@ def rescore_analysis_with_profile(results, scoring_profile):
     results["speech_issues"] = build_speech_issues(
         results.get("debug", {}).get("word_timeline", []),
         results.get("pauses_timeline", []),
+        segment_metrics=results.get("debug", {}).get("segment_metrics", []),
+        calibrated_metrics=calibrated_metrics,
         readable_metrics=readable_metrics,
     )
     return results
@@ -464,7 +468,144 @@ def build_summary(readable_metrics, performance_scores, coaching_cards):
 def phrase_from_words(words_data, limit=8):
     return " ".join(word["word"] for word in words_data[:limit])
 
-def build_speech_issues(words_data, pauses, filler_words=DEFAULT_FILLERS, readable_metrics=None):
+def segment_phrase(words_data):
+    return " ".join(word["word"] for word in words_data)
+
+def is_sentence_boundary(word):
+    return word.rstrip().endswith((".", "?", "!"))
+
+def split_speech_segments(words_data):
+    segments = []
+    current_words = []
+
+    for word in words_data:
+        current_words.append(word)
+        if is_sentence_boundary(word["word"]):
+            segments.append(current_words)
+            current_words = []
+
+    if current_words:
+        segments.append(current_words)
+
+    return [
+        {
+            "phrase": segment_phrase(segment_words),
+            "start": segment_words[0]["start"],
+            "end": segment_words[-1]["end"],
+            "word_count": len(segment_words),
+            "words": segment_words,
+        }
+        for segment_words in segments
+        if segment_words
+    ]
+
+def pitch_values_for_time_range(pitch_timeline, start, end, sample_rate, hop_length=PITCH_FRAME_HOP_LENGTH):
+    start_frame = max(0, int(start * sample_rate / hop_length))
+    end_frame = min(len(pitch_timeline), int(np.ceil(end * sample_rate / hop_length)))
+    if end_frame <= start_frame:
+        return []
+    return [pitch for pitch in pitch_timeline[start_frame:end_frame] if pitch > 0]
+
+def pause_gaps_for_segment(pauses, start, end):
+    return [
+        pause
+        for pause in pauses
+        if start <= pause.get("timestamp", 0.0) <= end
+    ]
+
+def build_segment_metrics(words_data, pauses, pitch_timeline, sample_rate, filler_words=DEFAULT_FILLERS):
+    segment_metrics = []
+    for segment in split_speech_segments(words_data):
+        start = segment["start"]
+        end = segment["end"]
+        duration_minutes = (end - start) / 60.0
+        voiced_pitches = pitch_values_for_time_range(pitch_timeline, start, end, sample_rate)
+        pause_gaps = pause_gaps_for_segment(pauses, start, end)
+        filler_count = sum(1 for word in segment["words"] if word["clean"] in filler_words)
+
+        segment_metrics.append({
+            "phrase": segment["phrase"],
+            "start": start,
+            "end": end,
+            "word_count": segment["word_count"],
+            "wpm": round(segment["word_count"] / duration_minutes, 1) if duration_minutes > 0 else 0.0,
+            "filler_count": filler_count,
+            "pause_gap_count": len(pause_gaps),
+            "pause_gaps": pause_gaps,
+            "pitch_variance_std": (
+                round(float(np.std(voiced_pitches)), 2)
+                if len(voiced_pitches) >= MIN_SEGMENT_VOICED_PITCHES
+                else None
+            ),
+        })
+
+    return segment_metrics
+
+def pace_issue_meaning(label):
+    meanings = {
+        "Too fast": "This phrase is faster than the calibrated target range, which can make the idea feel rushed.",
+        "Too slow": "This phrase is slower than the calibrated target range, which can reduce energy and flow.",
+    }
+    return meanings[label]
+
+def intonation_issue_meaning(label):
+    meanings = {
+        "Too flat": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "Over-varied": "This phrase has more pitch variation than the target range, so emphasis may sound uneven.",
+    }
+    return meanings[label]
+
+def build_segment_pacing_flags(segment_metrics, calibrated_metrics):
+    flags = []
+    target_wpm = calibrated_metrics["target_wpm"]
+    wpm_tolerance = calibrated_metrics["wpm_tolerance_margin"]
+
+    for segment in segment_metrics:
+        pace_label = label_pace(segment["wpm"], target_wpm, wpm_tolerance)
+        if pace_label == "On target":
+            continue
+        flags.append({
+            "phrase": segment["phrase"],
+            "timestamp": segment["start"],
+            "issue": pace_label,
+            "value": segment["wpm"],
+            "meaning": pace_issue_meaning(pace_label),
+            "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed.",
+        })
+
+    return flags
+
+def build_segment_intonation_flags(segment_metrics, calibrated_metrics):
+    flags = []
+    target_pitch_std = calibrated_metrics["target_pitch_std"]
+    pitch_tolerance = calibrated_metrics["pitch_tolerance_margin"]
+
+    for segment in segment_metrics:
+        pitch_std = segment.get("pitch_variance_std")
+        if pitch_std is None:
+            continue
+        intonation_label = label_intonation(pitch_std, target_pitch_std, pitch_tolerance)
+        if intonation_label == "On target":
+            continue
+        flags.append({
+            "phrase": segment["phrase"],
+            "timestamp": segment["start"],
+            "issue": intonation_label,
+            "value": pitch_std,
+            "meaning": intonation_issue_meaning(intonation_label),
+            "suggestion": "Mark the key words in this phrase and keep pitch movement intentional.",
+        })
+
+    return flags
+
+def build_speech_issues(
+    words_data,
+    pauses,
+    filler_words=DEFAULT_FILLERS,
+    readable_metrics=None,
+    segment_metrics=None,
+    calibrated_metrics=None,
+):
     filler_issues = []
     for word in words_data:
         if word["clean"] in filler_words:
@@ -486,7 +627,10 @@ def build_speech_issues(words_data, pauses, filler_words=DEFAULT_FILLERS, readab
 
     pacing_flags = []
     intonation_flags = []
-    if readable_metrics:
+    if segment_metrics and calibrated_metrics:
+        pacing_flags = build_segment_pacing_flags(segment_metrics, calibrated_metrics)
+        intonation_flags = build_segment_intonation_flags(segment_metrics, calibrated_metrics)
+    elif readable_metrics:
         first_phrase = phrase_from_words(words_data)
         first_timestamp = words_data[0]["start"] if words_data else 0.0
         pace_metric = readable_metrics["pace"]
@@ -619,6 +763,7 @@ def analyze_audio(file_path, pause_threshold=1.5, scoring_profile=None):
     observed_wpm = round(wpm, 1)
     observed_pitch_std = round(pitch_std, 2)
     filler_ratio = filler_count / total_words
+    segment_metrics = build_segment_metrics(words_data, pauses, pitch_timeline, sample_rate=sr)
 
     performance_scores = build_performance_scores(
         observed_wpm,
@@ -675,7 +820,13 @@ def analyze_audio(file_path, pause_threshold=1.5, scoring_profile=None):
             "text": build_transcript_text(words_data),
             "word_count": total_words
         },
-        "speech_issues": build_speech_issues(words_data, pauses, readable_metrics=readable_metrics),
+        "speech_issues": build_speech_issues(
+            words_data,
+            pauses,
+            segment_metrics=segment_metrics,
+            calibrated_metrics=calibrated_metrics,
+            readable_metrics=readable_metrics,
+        ),
         "raw_metrics": {
             "wpm": observed_wpm,
             "pitch_variance_std": observed_pitch_std,
@@ -683,6 +834,7 @@ def analyze_audio(file_path, pause_threshold=1.5, scoring_profile=None):
         },
         "debug": {
             "word_timeline": words_data,
+            "segment_metrics": segment_metrics,
             "pitch_timeline_sample": pitch_timeline[::200] # Subsample data array for viewability
         }
     }

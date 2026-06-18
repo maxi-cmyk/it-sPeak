@@ -106,20 +106,46 @@
     "pause_flags": [],
     "pacing_flags": [
       {
-        "phrase": "So, basically our project is like a web",
+        "phrase": "So, basically our project is like a web ad for public speaking coaching and the current market is like way too expensive for students because human cultures cost a lot of money.",
         "timestamp": 0.0,
         "issue": "Too slow",
-        "meaning": "You are speaking slower than the calibrated Singapore presentation range, which can reduce energy and flow.",
-        "suggestion": "Use the target range as a guide and rehearse this section with deliberate pauses."
+        "value": 111.6,
+        "meaning": "This phrase is slower than the calibrated target range, which can reduce energy and flow.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      },
+      {
+        "phrase": "And if you try to practice by yourself, it's like really hard to see your own mistakes or check your body language.",
+        "timestamp": 18.22,
+        "issue": "Too fast",
+        "value": 164.2,
+        "meaning": "This phrase is faster than the calibrated target range, which can make the idea feel rushed.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      },
+      {
+        "phrase": "So, yeah, that's why we built this tool to automate the scoring.",
+        "timestamp": 27.1,
+        "issue": "Too slow",
+        "value": 101.4,
+        "meaning": "This phrase is slower than the calibrated target range, which can reduce energy and flow.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
       }
     ],
     "intonation_flags": [
       {
-        "phrase": "So, basically our project is like a web",
+        "phrase": "So, basically our project is like a web ad for public speaking coaching and the current market is like way too expensive for students because human cultures cost a lot of money.",
         "timestamp": 0.0,
         "issue": "Too flat",
-        "meaning": "Your pitch variation is below the target range, so the delivery may sound less expressive.",
-        "suggestion": "Mark the key words in this phrase and vary pitch on those emphasis points."
+        "value": 54.58,
+        "meaning": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
+      },
+      {
+        "phrase": "And if you try to practice by yourself, it's like really hard to see your own mistakes or check your body language.",
+        "timestamp": 18.22,
+        "issue": "Too flat",
+        "value": 27.34,
+        "meaning": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
       }
     ]
   },
@@ -525,6 +551,41 @@
         "clean": "scoring",
         "start": 33.88,
         "end": 34.2
+      }
+    ],
+    "segment_metrics": [
+      {
+        "phrase": "So, basically our project is like a web ad for public speaking coaching and the current market is like way too expensive for students because human cultures cost a lot of money.",
+        "start": 0.0,
+        "end": 17.2,
+        "word_count": 32,
+        "wpm": 111.6,
+        "filler_count": 4,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 54.58
+      },
+      {
+        "phrase": "And if you try to practice by yourself, it's like really hard to see your own mistakes or check your body language.",
+        "start": 18.22,
+        "end": 26.26,
+        "word_count": 22,
+        "wpm": 164.2,
+        "filler_count": 1,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 27.34
+      },
+      {
+        "phrase": "So, yeah, that's why we built this tool to automate the scoring.",
+        "start": 27.1,
+        "end": 34.2,
+        "word_count": 12,
+        "wpm": 101.4,
+        "filler_count": 1,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 76.26
       }
     ],
     "pitch_timeline_sample": [

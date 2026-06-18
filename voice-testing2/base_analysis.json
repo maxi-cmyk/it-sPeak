@@ -89,8 +89,74 @@
         "suggestion": "Keep this pause if it separates ideas; shorten it if it was unplanned."
       }
     ],
-    "pacing_flags": [],
-    "intonation_flags": []
+    "pacing_flags": [
+      {
+        "phrase": "For our team project, we wanted to address a very common problem that many university students face when preparing for their finals or internship interviews.",
+        "timestamp": 0.0,
+        "issue": "Too fast",
+        "value": 164.8,
+        "meaning": "This phrase is faster than the calibrated target range, which can make the idea feel rushed.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      },
+      {
+        "phrase": "The core issue is that getting high quality, objective feedback on your public speaking is incredibly difficult.",
+        "timestamp": 12.04,
+        "issue": "Too fast",
+        "value": 161.9,
+        "meaning": "This phrase is faster than the calibrated target range, which can make the idea feel rushed.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      },
+      {
+        "phrase": "Most people either rely on self -review which is highly subjective or they just practice blindly without knowing what to fix.",
+        "timestamp": 19.92,
+        "issue": "Too fast",
+        "value": 177.0,
+        "meaning": "This phrase is faster than the calibrated target range, which can make the idea feel rushed.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      },
+      {
+        "phrase": "Our platform solves this by offering an on -demand data -driven audio and video analysis tool that breaks down your delivery metrics instantly.",
+        "timestamp": 28.38,
+        "issue": "Too fast",
+        "value": 153.8,
+        "meaning": "This phrase is faster than the calibrated target range, which can make the idea feel rushed.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      }
+    ],
+    "intonation_flags": [
+      {
+        "phrase": "For our team project, we wanted to address a very common problem that many university students face when preparing for their finals or internship interviews.",
+        "timestamp": 0.0,
+        "issue": "Too flat",
+        "value": 59.3,
+        "meaning": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
+      },
+      {
+        "phrase": "The core issue is that getting high quality, objective feedback on your public speaking is incredibly difficult.",
+        "timestamp": 12.04,
+        "issue": "Too flat",
+        "value": 52.98,
+        "meaning": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
+      },
+      {
+        "phrase": "Most people either rely on self -review which is highly subjective or they just practice blindly without knowing what to fix.",
+        "timestamp": 19.92,
+        "issue": "Too flat",
+        "value": 53.22,
+        "meaning": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
+      },
+      {
+        "phrase": "Our platform solves this by offering an on -demand data -driven audio and video analysis tool that breaks down your delivery metrics instantly.",
+        "timestamp": 28.38,
+        "issue": "Too flat",
+        "value": 32.97,
+        "meaning": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
+      }
+    ]
   },
   "raw_metrics": {
     "wpm": 135.2,
@@ -614,6 +680,64 @@
         "clean": "instantly",
         "start": 36.96,
         "end": 37.35
+      }
+    ],
+    "segment_metrics": [
+      {
+        "phrase": "For our team project, we wanted to address a very common problem that many university students face when preparing for their finals or internship interviews.",
+        "start": 0.0,
+        "end": 9.1,
+        "word_count": 25,
+        "wpm": 164.8,
+        "filler_count": 0,
+        "pause_gap_count": 1,
+        "pause_gaps": [
+          {
+            "timestamp": 9.1,
+            "duration": 2.94,
+            "classification": "Strategic Pause"
+          }
+        ],
+        "pitch_variance_std": 59.3
+      },
+      {
+        "phrase": "The core issue is that getting high quality, objective feedback on your public speaking is incredibly difficult.",
+        "start": 12.04,
+        "end": 18.34,
+        "word_count": 17,
+        "wpm": 161.9,
+        "filler_count": 0,
+        "pause_gap_count": 1,
+        "pause_gaps": [
+          {
+            "timestamp": 18.34,
+            "duration": 1.58,
+            "classification": "Strategic Pause"
+          }
+        ],
+        "pitch_variance_std": 52.98
+      },
+      {
+        "phrase": "Most people either rely on self -review which is highly subjective or they just practice blindly without knowing what to fix.",
+        "start": 19.92,
+        "end": 27.04,
+        "word_count": 21,
+        "wpm": 177.0,
+        "filler_count": 0,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 53.22
+      },
+      {
+        "phrase": "Our platform solves this by offering an on -demand data -driven audio and video analysis tool that breaks down your delivery metrics instantly.",
+        "start": 28.38,
+        "end": 37.35,
+        "word_count": 23,
+        "wpm": 153.8,
+        "filler_count": 0,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 32.97
       }
     ],
     "pitch_timeline_sample": [

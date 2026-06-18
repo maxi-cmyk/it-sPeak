@@ -74,14 +74,40 @@
       }
     ],
     "pause_flags": [],
-    "pacing_flags": [],
+    "pacing_flags": [
+      {
+        "phrase": "Our prototype focuses on one practical role, helping students understand how the spoken delivery sounds before they present.",
+        "timestamp": 0.0,
+        "issue": "Too slow",
+        "value": 145.6,
+        "meaning": "This phrase is slower than the calibrated target range, which can reduce energy and flow.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      },
+      {
+        "phrase": "For this stage, the benchmark is based on a strong sample recording so we can test whether future recordings seem close to that standard.",
+        "timestamp": 26.54,
+        "issue": "Too fast",
+        "value": 206.9,
+        "meaning": "This phrase is faster than the calibrated target range, which can make the idea feel rushed.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      }
+    ],
     "intonation_flags": [
       {
-        "phrase": "Our prototype focuses on one practical role, helping",
+        "phrase": "Our prototype focuses on one practical role, helping students understand how the spoken delivery sounds before they present.",
         "timestamp": 0.0,
         "issue": "Over-varied",
-        "meaning": "Your pitch variation is above the target range, so the delivery may sound uneven or exaggerated.",
-        "suggestion": "Mark the key words in this phrase and vary pitch on those emphasis points."
+        "value": 77.43,
+        "meaning": "This phrase has more pitch variation than the target range, so emphasis may sound uneven.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
+      },
+      {
+        "phrase": "Instead of showing only raw numbers, the report explains whether the speakers on target, rushing, too flat, or relying too much on repeated filler phrases.",
+        "timestamp": 16.74,
+        "issue": "Over-varied",
+        "value": 52.79,
+        "meaning": "This phrase has more pitch variation than the target range, so emphasis may sound uneven.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
       }
     ]
   },
@@ -625,6 +651,52 @@
         "clean": "standard",
         "start": 33.18,
         "end": 33.5
+      }
+    ],
+    "segment_metrics": [
+      {
+        "phrase": "Our prototype focuses on one practical role, helping students understand how the spoken delivery sounds before they present.",
+        "start": 0.0,
+        "end": 7.42,
+        "word_count": 18,
+        "wpm": 145.6,
+        "filler_count": 0,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 77.43
+      },
+      {
+        "phrase": "The audio engine listens for pacing, vocal variation, and deliverance then converts these measurements into feedback that is easier to act on.",
+        "start": 8.3,
+        "end": 16.2,
+        "word_count": 22,
+        "wpm": 167.1,
+        "filler_count": 0,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 37.37
+      },
+      {
+        "phrase": "Instead of showing only raw numbers, the report explains whether the speakers on target, rushing, too flat, or relying too much on repeated filler phrases.",
+        "start": 16.74,
+        "end": 25.88,
+        "word_count": 25,
+        "wpm": 164.1,
+        "filler_count": 0,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 52.79
+      },
+      {
+        "phrase": "For this stage, the benchmark is based on a strong sample recording so we can test whether future recordings seem close to that standard.",
+        "start": 26.54,
+        "end": 33.5,
+        "word_count": 24,
+        "wpm": 206.9,
+        "filler_count": 1,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 35.45
       }
     ],
     "pitch_timeline_sample": [

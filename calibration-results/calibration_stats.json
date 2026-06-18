@@ -35,7 +35,13 @@
       "aggregate_score": 100.0,
       "pacing_score": 100.0,
       "intonation_score": 100.0,
-      "word_choice_score": 100.0
+      "word_choice_score": 100.0,
+      "segment_count": 4,
+      "rushed_segment_count": 4,
+      "slow_segment_count": 0,
+      "flat_segment_count": 2,
+      "over_varied_segment_count": 1,
+      "filler_segment_count": 0
     },
     {
       "folder": "voice-testing1",
@@ -62,7 +68,13 @@
       "aggregate_score": 81.9,
       "pacing_score": 100.0,
       "intonation_score": 68.7,
-      "word_choice_score": 75.0
+      "word_choice_score": 75.0,
+      "segment_count": 3,
+      "rushed_segment_count": 2,
+      "slow_segment_count": 1,
+      "flat_segment_count": 1,
+      "over_varied_segment_count": 2,
+      "filler_segment_count": 3
     },
     {
       "folder": "voice-testing1",
@@ -89,7 +101,13 @@
       "aggregate_score": 87.9,
       "pacing_score": 100.0,
       "intonation_score": 71.3,
-      "word_choice_score": 90.0
+      "word_choice_score": 90.0,
+      "segment_count": 4,
+      "rushed_segment_count": 1,
+      "slow_segment_count": 1,
+      "flat_segment_count": 0,
+      "over_varied_segment_count": 2,
+      "filler_segment_count": 1
     },
     {
       "folder": "voice-testing2",
@@ -116,7 +134,13 @@
       "aggregate_score": 100.0,
       "pacing_score": 100.0,
       "intonation_score": 100.0,
-      "word_choice_score": 100.0
+      "word_choice_score": 100.0,
+      "segment_count": 4,
+      "rushed_segment_count": 4,
+      "slow_segment_count": 0,
+      "flat_segment_count": 4,
+      "over_varied_segment_count": 0,
+      "filler_segment_count": 0
     },
     {
       "folder": "voice-testing2",
@@ -143,7 +167,13 @@
       "aggregate_score": 81.5,
       "pacing_score": 85.0,
       "intonation_score": 85.0,
-      "word_choice_score": 75.0
+      "word_choice_score": 75.0,
+      "segment_count": 3,
+      "rushed_segment_count": 1,
+      "slow_segment_count": 2,
+      "flat_segment_count": 2,
+      "over_varied_segment_count": 0,
+      "filler_segment_count": 3
     },
     {
       "folder": "voice-testing2",
@@ -170,7 +200,13 @@
       "aggregate_score": 92.0,
       "pacing_score": 100.0,
       "intonation_score": 85.0,
-      "word_choice_score": 90.0
+      "word_choice_score": 90.0,
+      "segment_count": 4,
+      "rushed_segment_count": 2,
+      "slow_segment_count": 0,
+      "flat_segment_count": 4,
+      "over_varied_segment_count": 0,
+      "filler_segment_count": 1
     },
     {
       "folder": "voice-testing3",
@@ -197,7 +233,13 @@
       "aggregate_score": 100.0,
       "pacing_score": 100.0,
       "intonation_score": 100.0,
-      "word_choice_score": 100.0
+      "word_choice_score": 100.0,
+      "segment_count": 4,
+      "rushed_segment_count": 4,
+      "slow_segment_count": 0,
+      "flat_segment_count": 3,
+      "over_varied_segment_count": 1,
+      "filler_segment_count": 0
     },
     {
       "folder": "voice-testing3",
@@ -224,7 +266,13 @@
       "aggregate_score": 80.8,
       "pacing_score": 82.9,
       "intonation_score": 85.0,
-      "word_choice_score": 75.0
+      "word_choice_score": 75.0,
+      "segment_count": 2,
+      "rushed_segment_count": 0,
+      "slow_segment_count": 1,
+      "flat_segment_count": 2,
+      "over_varied_segment_count": 0,
+      "filler_segment_count": 2
     },
     {
       "folder": "voice-testing3",
@@ -251,7 +299,13 @@
       "aggregate_score": 91.2,
       "pacing_score": 85.0,
       "intonation_score": 100.0,
-      "word_choice_score": 90.0
+      "word_choice_score": 90.0,
+      "segment_count": 4,
+      "rushed_segment_count": 3,
+      "slow_segment_count": 0,
+      "flat_segment_count": 3,
+      "over_varied_segment_count": 0,
+      "filler_segment_count": 1
     }
   ]
 }

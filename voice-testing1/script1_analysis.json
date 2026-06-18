@@ -105,14 +105,56 @@
       }
     ],
     "pause_flags": [],
-    "pacing_flags": [],
+    "pacing_flags": [
+      {
+        "phrase": "So, basically, our budget is like a web app or part of speaking coaching and the current market is like way too expensive for our students because human coaches cost a lot of money.",
+        "timestamp": 0.0,
+        "issue": "Too slow",
+        "value": 137.7,
+        "meaning": "This phrase is slower than the calibrated target range, which can reduce energy and flow.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      },
+      {
+        "phrase": "And if you try to produce by yourself, it's like really hard to see your own mistakes or check your body language.",
+        "timestamp": 15.72,
+        "issue": "Too fast",
+        "value": 216.4,
+        "meaning": "This phrase is faster than the calibrated target range, which can make the idea feel rushed.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      },
+      {
+        "phrase": "So, yeah, that's why we built this tool to automatically score in.",
+        "timestamp": 21.82,
+        "issue": "Too fast",
+        "value": 191.5,
+        "meaning": "This phrase is faster than the calibrated target range, which can make the idea feel rushed.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      }
+    ],
     "intonation_flags": [
       {
-        "phrase": "So, basically, our budget is like a web",
+        "phrase": "So, basically, our budget is like a web app or part of speaking coaching and the current market is like way too expensive for our students because human coaches cost a lot of money.",
         "timestamp": 0.0,
         "issue": "Over-varied",
-        "meaning": "Your pitch variation is above the target range, so the delivery may sound uneven or exaggerated.",
-        "suggestion": "Mark the key words in this phrase and vary pitch on those emphasis points."
+        "value": 53.87,
+        "meaning": "This phrase has more pitch variation than the target range, so emphasis may sound uneven.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
+      },
+      {
+        "phrase": "And if you try to produce by yourself, it's like really hard to see your own mistakes or check your body language.",
+        "timestamp": 15.72,
+        "issue": "Too flat",
+        "value": 13.59,
+        "meaning": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
+      },
+      {
+        "phrase": "So, yeah, that's why we built this tool to automatically score in.",
+        "timestamp": 21.82,
+        "issue": "Over-varied",
+        "value": 85.17,
+        "meaning": "This phrase has more pitch variation than the target range, so emphasis may sound uneven.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
       }
     ]
   },
@@ -530,6 +572,41 @@
         "clean": "in",
         "start": 25.4,
         "end": 25.58
+      }
+    ],
+    "segment_metrics": [
+      {
+        "phrase": "So, basically, our budget is like a web app or part of speaking coaching and the current market is like way too expensive for our students because human coaches cost a lot of money.",
+        "start": 0.0,
+        "end": 14.82,
+        "word_count": 34,
+        "wpm": 137.7,
+        "filler_count": 4,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 53.87
+      },
+      {
+        "phrase": "And if you try to produce by yourself, it's like really hard to see your own mistakes or check your body language.",
+        "start": 15.72,
+        "end": 21.82,
+        "word_count": 22,
+        "wpm": 216.4,
+        "filler_count": 1,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 13.59
+      },
+      {
+        "phrase": "So, yeah, that's why we built this tool to automatically score in.",
+        "start": 21.82,
+        "end": 25.58,
+        "word_count": 12,
+        "wpm": 191.5,
+        "filler_count": 1,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 85.17
       }
     ],
     "pitch_timeline_sample": [

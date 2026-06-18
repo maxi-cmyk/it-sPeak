@@ -50,7 +50,8 @@ def compare_scores(higher_category, higher_row, lower_category, lower_row):
     }
 
 
-def evaluate_folder(folder_name, folder_rows, folder_manifest, minimum_score_gap):
+def evaluate_folder(folder_name, folder_rows, folder_manifest, minimum_score_gap, holdout_folders=None):
+    holdout_folders = holdout_folders or set()
     categories = expected_clips_by_category(folder_manifest)
     strong_row = row_for_category(folder_rows, categories.get("strong", []))
     better_row = row_for_category(folder_rows, categories.get("better", []))
@@ -94,6 +95,7 @@ def evaluate_folder(folder_name, folder_rows, folder_manifest, minimum_score_gap
 
     return {
         "folder": folder_name,
+        "validation_role": "holdout" if folder_name in holdout_folders else "calibration",
         "missing_clips": missing,
         "ranking_checks": ranking_checks,
         "gap_warnings": gap_warnings,
@@ -101,7 +103,8 @@ def evaluate_folder(folder_name, folder_rows, folder_manifest, minimum_score_gap
     }
 
 
-def evaluate_rows(rows, manifest, minimum_score_gap=5.0):
+def evaluate_rows(rows, manifest, minimum_score_gap=5.0, holdout_folders=None):
+    holdout_folders = set(holdout_folders or [])
     grouped_rows = rows_by_folder(rows)
     folder_results = []
 
@@ -111,6 +114,7 @@ def evaluate_rows(rows, manifest, minimum_score_gap=5.0):
             grouped_rows.get(folder_name, {}),
             manifest[folder_name],
             minimum_score_gap,
+            holdout_folders=holdout_folders,
         ))
 
     ranking_failures = sum(
@@ -135,6 +139,9 @@ def evaluate_rows(rows, manifest, minimum_score_gap=5.0):
             "warnings": warnings,
             "missing_clips": missing_clips,
             "minimum_score_gap": minimum_score_gap,
+            "holdout_folders": sum(
+                1 for folder in folder_results if folder["validation_role"] == "holdout"
+            ),
         },
         "folders": folder_results,
     }
@@ -161,7 +168,7 @@ def write_outputs(result, output_dir):
         "",
     ]
     for folder in result["folders"]:
-        lines.append(folder["folder"])
+        lines.append(f"{folder['folder']} ({folder.get('validation_role', 'calibration')})")
         for check in folder["ranking_checks"]:
             lines.append(
                 f"- {check['comparison']}: {check['status']} "
@@ -184,11 +191,22 @@ def main(argv=None):
     parser.add_argument("--manifest", default="calibration_manifest.json")
     parser.add_argument("--output-dir", default="calibration-results")
     parser.add_argument("--minimum-score-gap", type=float, default=5.0)
+    parser.add_argument(
+        "--holdout-folder",
+        action="append",
+        default=[],
+        help="Folder name to label as holdout validation in the report. Can be passed more than once.",
+    )
     args = parser.parse_args(argv)
 
     stats = load_json(args.stats)
     manifest = load_json(args.manifest)
-    result = evaluate_rows(stats["rows"], manifest, minimum_score_gap=args.minimum_score_gap)
+    result = evaluate_rows(
+        stats["rows"],
+        manifest,
+        minimum_score_gap=args.minimum_score_gap,
+        holdout_folders=set(args.holdout_folder),
+    )
     json_path, text_path = write_outputs(result, args.output_dir)
     print(f"Wrote scoring evaluation to {json_path}")
     print(f"Wrote text report to {text_path}")

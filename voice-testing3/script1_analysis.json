@@ -101,20 +101,30 @@
     "pause_flags": [],
     "pacing_flags": [
       {
-        "phrase": "So, basically, our project is like a web",
+        "phrase": "So, basically, our project is like a web app for public speaking coaching and the current market is way too expensive for students because human coaches cost a lot of money and if you try to practice by yourself, it's like really hard to see your own mistakes or check your body language.",
         "timestamp": 3.86,
         "issue": "Too slow",
-        "meaning": "You are speaking slower than the calibrated Singapore presentation range, which can reduce energy and flow.",
-        "suggestion": "Use the target range as a guide and rehearse this section with deliberate pauses."
+        "value": 136.2,
+        "meaning": "This phrase is slower than the calibrated target range, which can reduce energy and flow.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
       }
     ],
     "intonation_flags": [
       {
-        "phrase": "So, basically, our project is like a web",
+        "phrase": "So, basically, our project is like a web app for public speaking coaching and the current market is way too expensive for students because human coaches cost a lot of money and if you try to practice by yourself, it's like really hard to see your own mistakes or check your body language.",
         "timestamp": 3.86,
         "issue": "Too flat",
-        "meaning": "Your pitch variation is below the target range, so the delivery may sound less expressive.",
-        "suggestion": "Mark the key words in this phrase and vary pitch on those emphasis points."
+        "value": 52.07,
+        "meaning": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
+      },
+      {
+        "phrase": "So, yeah, that's why we built this tool to automate the scoring.",
+        "timestamp": 27.2,
+        "issue": "Too flat",
+        "value": 61.28,
+        "meaning": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
       }
     ]
   },
@@ -514,6 +524,30 @@
         "clean": "scoring",
         "start": 32.02,
         "end": 32.3
+      }
+    ],
+    "segment_metrics": [
+      {
+        "phrase": "So, basically, our project is like a web app for public speaking coaching and the current market is way too expensive for students because human coaches cost a lot of money and if you try to practice by yourself, it's like really hard to see your own mistakes or check your body language.",
+        "start": 3.86,
+        "end": 27.2,
+        "word_count": 53,
+        "wpm": 136.2,
+        "filler_count": 4,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 52.07
+      },
+      {
+        "phrase": "So, yeah, that's why we built this tool to automate the scoring.",
+        "start": 27.2,
+        "end": 32.3,
+        "word_count": 12,
+        "wpm": 141.2,
+        "filler_count": 1,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 61.28
       }
     ],
     "pitch_timeline_sample": [

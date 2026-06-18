@@ -30,6 +30,12 @@ FIELDNAMES = [
     "pacing_score",
     "intonation_score",
     "word_choice_score",
+    "segment_count",
+    "rushed_segment_count",
+    "slow_segment_count",
+    "flat_segment_count",
+    "over_varied_segment_count",
+    "filler_segment_count",
 ]
 
 
@@ -55,6 +61,22 @@ def pause_metrics(analysis):
     }
 
 
+def segment_issue_metrics(analysis):
+    speech_issues = analysis.get("speech_issues", {})
+    pacing_flags = speech_issues.get("pacing_flags", [])
+    intonation_flags = speech_issues.get("intonation_flags", [])
+    segment_metrics = analysis.get("debug", {}).get("segment_metrics", [])
+
+    return {
+        "segment_count": len(segment_metrics),
+        "rushed_segment_count": sum(1 for issue in pacing_flags if issue.get("issue") == "Too fast"),
+        "slow_segment_count": sum(1 for issue in pacing_flags if issue.get("issue") == "Too slow"),
+        "flat_segment_count": sum(1 for issue in intonation_flags if issue.get("issue") == "Too flat"),
+        "over_varied_segment_count": sum(1 for issue in intonation_flags if issue.get("issue") == "Over-varied"),
+        "filler_segment_count": sum(1 for segment in segment_metrics if segment.get("filler_count", 0) > 0),
+    }
+
+
 def metric_row(folder, path, analysis):
     clip = clip_name_from_analysis_path(path)
     word_count = analysis["transcript"]["word_count"]
@@ -63,6 +85,7 @@ def metric_row(folder, path, analysis):
     scores = analysis["performance_scores"]
     readable_metrics = analysis.get("readable_metrics", {})
     pauses = pause_metrics(analysis)
+    segment_issues = segment_issue_metrics(analysis)
 
     return {
         "folder": folder.name,
@@ -90,6 +113,12 @@ def metric_row(folder, path, analysis):
         "pacing_score": scores["pacing_alignment"],
         "intonation_score": scores["vocal_intonation_variety"],
         "word_choice_score": scores["word_choice_efficiency"],
+        "segment_count": segment_issues["segment_count"],
+        "rushed_segment_count": segment_issues["rushed_segment_count"],
+        "slow_segment_count": segment_issues["slow_segment_count"],
+        "flat_segment_count": segment_issues["flat_segment_count"],
+        "over_varied_segment_count": segment_issues["over_varied_segment_count"],
+        "filler_segment_count": segment_issues["filler_segment_count"],
     }
 
 

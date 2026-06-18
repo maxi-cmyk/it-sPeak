@@ -65,8 +65,66 @@
   "speech_issues": {
     "filler_words": [],
     "pause_flags": [],
-    "pacing_flags": [],
-    "intonation_flags": []
+    "pacing_flags": [
+      {
+        "phrase": "For our team project, we wanted to address a very common problem that many university students face when preparing for their finals or internship interviews.",
+        "timestamp": 1.38,
+        "issue": "Too fast",
+        "value": 179.0,
+        "meaning": "This phrase is faster than the calibrated target range, which can make the idea feel rushed.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      },
+      {
+        "phrase": "The core issue is that getting high -quality, objective feedback on your public speaking is incredibly difficult.",
+        "timestamp": 10.96,
+        "issue": "Too fast",
+        "value": 196.9,
+        "meaning": "This phrase is faster than the calibrated target range, which can make the idea feel rushed.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      },
+      {
+        "phrase": "Most people either rely on self -review, which is highly subjective, or they just practice blindly without knowing what to face.",
+        "timestamp": 17.06,
+        "issue": "Too fast",
+        "value": 192.7,
+        "meaning": "This phrase is faster than the calibrated target range, which can make the idea feel rushed.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      },
+      {
+        "phrase": "Our platform solves this by offering an on -demand data -driven audio and video analysis to their breaks down your delivery metrics instantly.",
+        "timestamp": 24.52,
+        "issue": "Too fast",
+        "value": 194.9,
+        "meaning": "This phrase is faster than the calibrated target range, which can make the idea feel rushed.",
+        "suggestion": "Rehearse this phrase against the target range and add or shorten pauses as needed."
+      }
+    ],
+    "intonation_flags": [
+      {
+        "phrase": "The core issue is that getting high -quality, objective feedback on your public speaking is incredibly difficult.",
+        "timestamp": 10.96,
+        "issue": "Too flat",
+        "value": 26.33,
+        "meaning": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
+      },
+      {
+        "phrase": "Most people either rely on self -review, which is highly subjective, or they just practice blindly without knowing what to face.",
+        "timestamp": 17.06,
+        "issue": "Over-varied",
+        "value": 59.01,
+        "meaning": "This phrase has more pitch variation than the target range, so emphasis may sound uneven.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
+      },
+      {
+        "phrase": "Our platform solves this by offering an on -demand data -driven audio and video analysis to their breaks down your delivery metrics instantly.",
+        "timestamp": 24.52,
+        "issue": "Too flat",
+        "value": 27.62,
+        "meaning": "This phrase has less pitch variation than the target range, so it may sound monotone.",
+        "suggestion": "Mark the key words in this phrase and keep pitch movement intentional."
+      }
+    ]
   },
   "raw_metrics": {
     "wpm": 160.7,
@@ -590,6 +648,52 @@
         "clean": "instantly",
         "start": 30.98,
         "end": 31.6
+      }
+    ],
+    "segment_metrics": [
+      {
+        "phrase": "For our team project, we wanted to address a very common problem that many university students face when preparing for their finals or internship interviews.",
+        "start": 1.38,
+        "end": 9.76,
+        "word_count": 25,
+        "wpm": 179.0,
+        "filler_count": 0,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 31.24
+      },
+      {
+        "phrase": "The core issue is that getting high -quality, objective feedback on your public speaking is incredibly difficult.",
+        "start": 10.96,
+        "end": 16.14,
+        "word_count": 17,
+        "wpm": 196.9,
+        "filler_count": 0,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 26.33
+      },
+      {
+        "phrase": "Most people either rely on self -review, which is highly subjective, or they just practice blindly without knowing what to face.",
+        "start": 17.06,
+        "end": 23.6,
+        "word_count": 21,
+        "wpm": 192.7,
+        "filler_count": 0,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 59.01
+      },
+      {
+        "phrase": "Our platform solves this by offering an on -demand data -driven audio and video analysis to their breaks down your delivery metrics instantly.",
+        "start": 24.52,
+        "end": 31.6,
+        "word_count": 23,
+        "wpm": 194.9,
+        "filler_count": 0,
+        "pause_gap_count": 0,
+        "pause_gaps": [],
+        "pitch_variance_std": 27.62
       }
     ],
     "pitch_timeline_sample": [
