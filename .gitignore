@@ -1,0 +1,33 @@
+# --- Secrets ---
+.env
+*.env
+!.env.example
+
+# --- Python virtual environments ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Python cache / build artifacts ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Media / large sample files ---
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+
+# --- OS / editor cruft ---
+.DS_Store
+Thumbs.db
