@@ -1,0 +1,26 @@
+# --- Web / async job queue ---
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+celery==5.4.0
+redis==5.2.1
+
+# --- Data contracts / settings ---
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# --- Computer vision ---
+mediapipe==0.10.20
+numpy==1.26.4
+ffmpeg-python==0.2.0
+
+# --- OpenAI coaching + transcription ---
+openai==1.59.7
+
+# --- Audio analysis ---
+librosa==0.10.2
+numba==0.60.0
+python-multipart==0.0.20
+
+# NOTE: the `ffmpeg` and `ffprobe` *binaries* must also be installed and on PATH
+# (or point ITSPEAK_FFMPEG_BIN / ITSPEAK_FFPROBE_BIN at them). They are NOT pip
+# packages. Windows: https://www.gyan.dev/ffmpeg/builds/  |  macOS: brew install ffmpeg

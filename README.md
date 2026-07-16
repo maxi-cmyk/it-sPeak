@@ -1,82 +1,265 @@
 # it'sPEAK
 
-AI-powered public speaking coach. Upload a talk, get archetype-calibrated
-delivery scores and tactical, grounded coaching cards.
+An on-demand, data-driven public-speaking coach for university students preparing for presentations, pitches, interviews, conferences, and keynote-style talks.
+
+Users upload an English-language presentation video of up to three minutes. it'sPEAK checks whether the recording is suitable for analysis, evaluates vocal delivery, facial presence, and body language, then turns the observable results into concrete coaching actions.
+
+> **Development status:** the multimodal analysis pipeline and local results experience are working. Persistent accounts, production storage, full project history, and most archetypes remain staged behind explicit scaffolds.
+
+## Why it'sPEAK
+
+Useful public-speaking feedback is difficult to access:
+
+- **Human coaching is expensive and difficult to scale.**
+- **Courses teach general principles but cannot assess an individual's rehearsal.**
+- **Self-review is subjective.** Speakers cannot reliably monitor voice, facial presence, posture, gestures, and use of space while delivering a talk.
+
+it'sPEAK is designed to make that feedback available on demand without pretending that geometric measurements are psychological diagnoses or clinical assessments.
+
+## Product Experience
+
+1. Create or select a rehearsal project and its speaking context.
+2. Upload a presentation recording of three minutes or less.
+3. Pass the pre-analysis quality gate for lighting, framing, face visibility, audio level, clipping, and silence.
+4. Confirm any recoverable limitations or re-record when the video cannot support reliable analysis.
+5. Follow live job progress while the visual, vocal, transcription, and coaching phases run asynchronously.
+6. Review scores, confidence, transcript, coaching priorities, synchronized landmarks, and the eye-contact timeline.
+7. Rehearse again and, once persistence is completed, compare progress against the project's calibration session.
+
+## Analysis Modules
+
+### Tonal and Vocal Delivery
+
+- Word-aligned English transcript through OpenAI Whisper
+- Speaking pace and pace consistency
+- Pitch range and variation through Librosa
+- Filler-word frequency
+- Strategic and hesitation pause analysis
+- Segment-level speech issues and actionable vocal coaching
+
+### Facial Presence
+
+- Eye-contact ratio using iris and eye geometry as a camera-contact proxy
+- Expression variation and head stability
+- `AU6` and `AU12` geometric proxies relative to a per-recording baseline
+- Smile-naturalness proxy, suppressed when face size or orientation is unreliable
+- Frame-indexed face landmarks for synchronized client-side overlays
+- On-camera, away, and unknown intervals on a seekable timeline
+
+The smile metrics are geometric proxies, not trained FACS action-unit detections and not emotion inference.
+
+### Body Language
+
+- Posture alignment and shoulder stability
+- Gesture frequency, range, and openness
+- Torso movement classified as `stable`, `purposeful_translation`, `repetitive_shifting`, or `insufficient_data`
+- Spatial-use estimate with a stationary-camera limitation
+- Partial-visibility and per-metric confidence reporting
+- Frame-indexed pose landmarks for the client-side skeleton overlay
+
+Movement feedback describes observable motion only. It does not infer anxiety, confidence, personality, intent, or mental state.
+
+### Coaching
+
+- Archetype-calibrated scores
+- Structured cards containing the observed problem, why it matters, and one concrete rehearsal action
+- OpenAI coaching with deterministic fallback cards when the provider is unavailable
+- Metrics marked `insufficient_data` are excluded and the remaining score inputs are reweighted
+
+## Quality Gate
+
+Full analysis does not start until the recording passes or the user explicitly confirms warning-level limitations.
+
+**Hard rejection**
+
+- Undecodable or spoofed media
+- Missing audio
+- No consistently detectable primary face
+- Duration over three minutes
+
+**Confirmation required**
+
+- Poor lighting, low contrast, or blur
+- Face smaller than the configured pixel threshold
+- Intermittent face detection or partial body visibility
+- Multiple detected faces
+- Quiet, clipped, or mostly silent audio
+
+The gate retains raw measurements alongside configurable thresholds so calibration can change without reprocessing the video.
+
+## PRD Progress
+
+| Capability | Status |
+| --- | --- |
+| Three-minute English video workflow | Implemented |
+| Pre-analysis recording quality gate | Implemented |
+| Vocal, facial, and body analysis | Implemented |
+| Synchronized face, skeleton, and eye-contact review | Implemented |
+| Structured OpenAI coaching cards | Implemented |
+| Corporate/Board and Motivational/Keynote archetypes | Implemented |
+| Startup Pitch, Academic/Conference, Informal/Team, Job Interview, and Custom archetypes | Scaffolded |
+| Rule-based archetype recommendation quiz | Planned |
+| Project folders and dashboard experience | Frontend prototype |
+| Supabase authentication and persistence | Schema/adapter scaffold |
+| Cloudflare R2 retained video storage | Adapter boundary scaffold |
+| Five-session project limit and protected Session 1 baseline | Planned |
+| Progress deltas, stagnation alerts, Best Session Replay, and Coaching Playbook | Planned |
+| Railway/Vercel production deployment | Planned |
 
 ## Architecture
 
-The core is split into three strictly-decoupled layers that only communicate
-through the Pydantic contracts in `itspeak/models.py`:
-
+```mermaid
+flowchart LR
+    UI[Next.js frontend] -->|upload and bearer token| API[FastAPI API]
+    API --> STORE[Private temporary artifact store]
+    API -->|quality job| REDIS[Redis]
+    REDIS --> WORKER[Celery worker]
+    WORKER --> FFMPEG[FFmpeg and ffprobe]
+    WORKER --> CV[MediaPipe face and pose]
+    WORKER --> AUDIO[Librosa and Whisper]
+    WORKER --> COACH[OpenAI coaching]
+    WORKER --> STORE
+    STORE -->|range video and gzip landmarks| UI
 ```
-  ffmpeg (2 fps)        Face + Body (parallel)      archetype calibration        low-temp LLM
-  ─────────────  ──►    ──────────────────────  ──►  ─────────────────────  ──►  ─────────────
-  extract_frames        analyze_frames()             normalize_scores()          CoachingService
-  pipeline.py           pipeline.py                  config.py                   coaching.py
-        │                      │                            │                          │
-        └── FrameBatch ────────┴── VideoAnalysisResult ─────┴── NormalizedScores ──────┴── list[CoachingCard]
+
+The current local implementation uses opaque, token-protected temporary files outside the webroot. Videos and landmark artifacts expire after 24 hours. Supabase and Cloudflare R2 are the intended production persistence boundaries but are not active yet.
+
+## Technology
+
+| Layer | Current implementation |
+| --- | --- |
+| Frontend | Next.js, React, JavaScript, Tailwind CSS, Recharts, Canvas overlays |
+| API | FastAPI and Pydantic |
+| Background processing | Celery and Redis |
+| Video and audio probing | FFmpeg and ffprobe |
+| Computer vision | MediaPipe Face Mesh and BlazePose in sequential video mode |
+| Vocal analysis | Librosa and NumPy |
+| Transcription and coaching | OpenAI Whisper and configurable OpenAI coaching model |
+| Local artifacts | Private filesystem store with bearer tokens and 24-hour retention |
+| Future persistence | Supabase and Cloudflare R2 scaffolds |
+
+## Repository Layout
+
+```text
+.
+├── backend/
+│   ├── itspeak/              # API, workers, quality gate, CV, audio, coaching
+│   ├── persistence/          # Supabase-compatible schema scaffold
+│   ├── scripts/              # Analysis cadence validation
+│   └── tests/                # Backend and security tests
+├── frontend/
+│   ├── app/                  # Dashboard, project, and results routes
+│   ├── components/           # Upload, quality-gate, charts, and video review UI
+│   ├── hooks/                # Analysis session state and polling
+│   ├── lib/                  # API client, adapters, and overlay timing logic
+│   └── tests/                # Overlay synchronization tests
+└── README.md
 ```
 
-| File | Responsibility |
-|------|----------------|
-| `itspeak/models.py`   | Shared Pydantic contracts (the only cross-layer coupling). |
-| `itspeak/pipeline.py` | FastAPI endpoints, Celery task, ffmpeg extraction, MediaPipe analysis loops. |
-| `itspeak/config.py`   | Archetype presets + raw-metric → 0-100 normalization. |
-| `itspeak/coaching.py` | LLM prompt assembly, provider calls, JSON validation, fallback. |
-| `itspeak/celery_app.py` / `settings.py` | Celery/Redis wiring and env-driven settings. |
+## Local Development
 
-### Design decisions mapped to requirements
+### Prerequisites
 
-- **~93% CPU reduction**: `ffmpeg` samples at **2 fps** (from ~30 fps) before any
-  inference runs. Frames are also downscaled (`ITSPEAK_MAX_FRAME_WIDTH`).
-- **Parallel modules**: `analyze_frames()` runs Face Mesh and BlazePose in a
-  2-thread `ThreadPoolExecutor`; MediaPipe's C++ inference releases the GIL, so
-  they truly run concurrently.
-- **No RAG**: `coaching.py` uses zero-/few-shot structured prompting at
-  temperature `0.3` with hard JSON + anti-hallucination constraints.
-- **Modular contracts**: layers never import each other's internals — only
-  `models.py`.
-- **Graceful degradation**: missing faces / low-confidence tracking / short
-  clips log warnings and emit neutral fallback scores (and a rule-based coaching
-  fallback if the LLM is unavailable) instead of crashing.
+- Node.js 20 or newer
+- Python 3.11
+- FFmpeg and ffprobe
+- Redis
+- An OpenAI API key for live transcription and generated coaching
 
-## Setup
+On macOS with Homebrew:
 
 ```bash
-python -m venv .venv && . .venv/Scripts/activate   # Windows PowerShell: .venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-cp .env.example .env    # then fill in your LLM API key
+brew install python@3.11 ffmpeg redis
+brew services start redis
 ```
 
-You also need the **ffmpeg** and **ffprobe** binaries on `PATH` (or set
-`ITSPEAK_FFMPEG_BIN` / `ITSPEAK_FFPROBE_BIN`) and a running **Redis** instance.
-
-## Run
+### Install
 
 ```bash
-# 1) Redis (example via Docker)
-docker run -p 6379:6379 redis:7
-
-# 2) Celery worker (does the CV + LLM work)
-celery -A itspeak.celery_app.celery_app worker --loglevel=info
-
-# 3) API
-uvicorn itspeak.pipeline:app --reload
+cd backend
+python3.11 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+cp .env.example .env
 ```
 
-## Usage
+Set `ITSPEAK_OPENAI_API_KEY` in `backend/.env`.
 
 ```bash
-# enqueue
-curl -X POST http://localhost:8000/analyze -H "Content-Type: application/json" -d '{
-  "video_path": "/abs/path/to/talk.mp4",
-  "archetype": "motivational_keynote",
-  "audience_context": "A 500-person startup conference keynote about resilience."
-}'
-# -> {"task_id": "...", "status": "queued"}
-
-# poll
-curl http://localhost:8000/result/<task_id>
+cd ../frontend
+npm ci
+cp .env.example .env.local
 ```
 
-Archetypes: `corporate_board`, `motivational_keynote`.
+### Run
+
+Run the API, worker, cleanup scheduler, and frontend in separate terminals from the repository root.
+
+```bash
+cd backend
+MPLCONFIGDIR=/tmp/itspeak-matplotlib .venv/bin/uvicorn itspeak.api:app --reload
+```
+
+```bash
+cd backend
+MPLCONFIGDIR=/tmp/itspeak-matplotlib .venv/bin/celery \
+  -A itspeak.celery_app.celery_app worker --loglevel=info
+```
+
+```bash
+cd backend
+.venv/bin/celery -A itspeak.celery_app.celery_app beat --loglevel=info
+```
+
+```bash
+# Run from the repository root
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). The API defaults to [http://localhost:8000](http://localhost:8000).
+
+## API Surface
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `POST` | `/sessions` | Upload a private video and begin the quality gate |
+| `GET` | `/sessions/{id}` | Read authenticated gate, job, and result state |
+| `POST` | `/sessions/{id}/confirm` | Continue past warning-level quality limitations |
+| `GET` | `/sessions/{id}/video` | Stream authenticated video with HTTP byte ranges |
+| `GET` | `/sessions/{id}/landmarks` | Retrieve the versioned gzip landmark artifact |
+| `GET` | `/archetypes` | List enabled and planned speaking archetypes |
+| `GET` | `/healthz` | API health check |
+
+Session access tokens are returned only when a session is created. Do not log them or place them in persistent public URLs.
+
+## Verification
+
+```bash
+cd backend
+MPLCONFIGDIR=/tmp/itspeak-matplotlib .venv/bin/python \
+  -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+```bash
+# Run from the repository root
+npm test
+npm run build
+```
+
+When annotated video fixtures are available, compare the provisional 5 fps cadence against 2 and 10 fps:
+
+```bash
+cd backend
+.venv/bin/python scripts/validate_cadence.py tests/fixtures/*.mp4
+```
+
+The cadence check fails when 5 fps changes the movement classification or differs from 10 fps by more than five percentage points on an available aggregate metric.
+
+## Current Boundaries
+
+- Local sessions are temporary and expire after 24 hours; the PRD's retained five-session project history requires the R2 and Supabase phase.
+- Only two archetypes currently have active calibration. Planned archetypes must not be presented as scored modes until their thresholds and tests exist.
+- Smile naturalness is intentionally labelled as a proxy while the current MediaPipe stack is retained.
+- Results are rehearsal feedback, not medical, psychological, employment, or clinical assessment.
+- The application currently targets English-language recordings and videos no longer than three minutes.
+
+For component-specific details, see [backend/README.md](backend/README.md) and [frontend/README.md](frontend/README.md).
