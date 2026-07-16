@@ -2,6 +2,7 @@
 .env
 *.env
 !.env.example
+.env.local
 
 # --- Python virtual environments ---
 .venv/
@@ -31,3 +32,8 @@ dist/
 # --- OS / editor cruft ---
 .DS_Store
 Thumbs.db
+
+# --- Node / Next.js ---
+node_modules/
+.next/
+.claude/
