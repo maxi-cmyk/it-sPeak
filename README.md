@@ -173,7 +173,25 @@ brew install python@3.11 ffmpeg redis
 brew services start redis
 ```
 
+On Windows with winget (PowerShell):
+
+```powershell
+winget install Python.Python.3.11
+winget install Gyan.FFmpeg
+winget install OpenJS.NodeJS.LTS
+# Redis has no native Windows build. Use Docker Desktop:
+docker run -d -p 6379:6379 --name itspeak-redis redis:7
+# ...or install Memurai (a Redis-compatible Windows service) instead:
+# winget install Memurai.MemuraiDeveloper
+```
+
+After installing FFmpeg, open a new terminal and confirm `ffmpeg -version` and
+`ffprobe -version` work. If they are not on `PATH`, set `ITSPEAK_FFMPEG_BIN` and
+`ITSPEAK_FFPROBE_BIN` in `backend/.env` to their full `.exe` paths.
+
 ### Install
+
+macOS / Linux:
 
 ```bash
 cd backend
@@ -182,7 +200,21 @@ python3.11 -m venv .venv
 cp .env.example .env
 ```
 
-Set `ITSPEAK_OPENAI_API_KEY` in `backend/.env`.
+Windows (PowerShell):
+
+```powershell
+cd backend
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+Copy-Item .env.example .env
+```
+
+Set `ITSPEAK_OPENAI_API_KEY` in `backend/.env`. On Windows, also set
+`ITSPEAK_ARTIFACT_DIR` to a Windows path (for example
+`ITSPEAK_ARTIFACT_DIR=C:\Users\<you>\itspeak-sessions`) since the default
+`/tmp/itspeak-sessions` is a Unix path.
+
+macOS / Linux:
 
 ```bash
 cd ../frontend
@@ -190,28 +222,71 @@ npm ci
 cp .env.example .env.local
 ```
 
+Windows (PowerShell):
+
+```powershell
+cd ..\frontend
+npm ci
+Copy-Item .env.example .env.local
+```
+
 ### Run
 
 Run the API, worker, cleanup scheduler, and frontend in separate terminals from the repository root.
 
+**macOS / Linux**
+
 ```bash
+# Terminal 1 - API
 cd backend
 MPLCONFIGDIR=/tmp/itspeak-matplotlib .venv/bin/uvicorn itspeak.api:app --reload
 ```
 
 ```bash
+# Terminal 2 - Celery worker
 cd backend
 MPLCONFIGDIR=/tmp/itspeak-matplotlib .venv/bin/celery \
   -A itspeak.celery_app.celery_app worker --loglevel=info
 ```
 
 ```bash
+# Terminal 3 - cleanup scheduler
 cd backend
 .venv/bin/celery -A itspeak.celery_app.celery_app beat --loglevel=info
 ```
 
 ```bash
-# Run from the repository root
+# Terminal 4 - frontend (run from the repository root)
+npm run dev
+```
+
+**Windows (PowerShell)**
+
+On Windows the Celery worker must use the solo pool (`--pool=solo`); the default
+prefork pool does not work on Windows.
+
+```powershell
+# Terminal 1 - API
+cd backend
+$env:MPLCONFIGDIR = "$env:TEMP\itspeak-matplotlib"
+.\.venv\Scripts\python.exe -m uvicorn itspeak.api:app --reload
+```
+
+```powershell
+# Terminal 2 - Celery worker
+cd backend
+$env:MPLCONFIGDIR = "$env:TEMP\itspeak-matplotlib"
+.\.venv\Scripts\python.exe -m celery -A itspeak.celery_app.celery_app worker --loglevel=info --pool=solo
+```
+
+```powershell
+# Terminal 3 - cleanup scheduler
+cd backend
+.\.venv\Scripts\python.exe -m celery -A itspeak.celery_app.celery_app beat --loglevel=info
+```
+
+```powershell
+# Terminal 4 - frontend (run from the repository root)
 npm run dev
 ```
 
@@ -233,10 +308,20 @@ Session access tokens are returned only when a session is created. Do not log th
 
 ## Verification
 
+macOS / Linux:
+
 ```bash
 cd backend
 MPLCONFIGDIR=/tmp/itspeak-matplotlib .venv/bin/python \
   -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+Windows (PowerShell):
+
+```powershell
+cd backend
+$env:MPLCONFIGDIR = "$env:TEMP\itspeak-matplotlib"
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py" -v
 ```
 
 ```bash
