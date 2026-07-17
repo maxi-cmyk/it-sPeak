@@ -10,11 +10,22 @@ from unittest.mock import AsyncMock, Mock, patch
 from fastapi import UploadFile
 
 from itspeak.api import create_analysis_session
+from itspeak.auth import AuthPrincipal
 from itspeak.jobs import analyze_session_task, quality_check_task
 from itspeak.models import Archetype, BodyMetrics, CoachingCard, FaceMetrics, Module, NormalizedScores, QualityDisposition, QualityGateReport, QualityMeasurements, VideoAnalysisResult
+from itspeak.persistence import InMemoryPersistence, set_persistence
 
 
 class SessionFlowContractTest(unittest.TestCase):
+    def setUp(self):
+        self.persistence = InMemoryPersistence()
+        self.persistence.ensure_profile("user-1")
+        self.project = self.persistence.create_project("user-1", {"name": "Board rehearsal", "default_archetype_key": "corporate_board"})
+        set_persistence(self.persistence)
+
+    def tearDown(self):
+        set_persistence(None)
+
     def test_upload_creates_private_session_and_queues_gate(self):
         upload = UploadFile(filename="talk.mp4", file=BytesIO(b"video"))
         manifest = {"session_id": "a081b0b6-3264-40ac-8e42-ff03e907ca27", "expires_at": "2030-01-01T00:00:00+00:00"}
@@ -24,7 +35,7 @@ class SessionFlowContractTest(unittest.TestCase):
             patch("itspeak.api.update_manifest"),
             patch("itspeak.api.quality_check_task.delay") as delay,
         ):
-            accepted = asyncio.run(create_analysis_session(upload, "project-1", Archetype.CORPORATE_BOARD, "Board"))
+            accepted = asyncio.run(create_analysis_session(upload, self.project["id"], Archetype.CORPORATE_BOARD, "Board", None, AuthPrincipal("user-1")))
         self.assertEqual(accepted.session_id, manifest["session_id"])
         self.assertEqual(accepted.access_token, "secret")
         delay.assert_called_once_with(manifest["session_id"])
@@ -50,6 +61,8 @@ class SessionFlowContractTest(unittest.TestCase):
         scores = NormalizedScores(eye_contact_score=80, expression_score=75, posture_score=85, gesture_score=70, archetype=Archetype.CORPORATE_BOARD)
         audio_payload = {"summary": {}, "performance_scores": {"aggregate_vocal_rating": 78.0}, "readable_metrics": {}, "transcript": {"text": "Hello"}, "pauses_timeline": [], "speech_issues": {}, "actionable_coaching_cards": []}
         card = CoachingCard(module=Module.FACE, problem="Gaze drops", importance="Connection", actionable_fix="Hold the lens")
+        session_id = "a081b0b6-3264-40ac-8e42-ff03e907ca27"
+        self.persistence.create_pending_session({"id": session_id, "project_id": self.project["id"], "owner_id": "user-1", "archetype_key": "corporate_board"})
         with tempfile.TemporaryDirectory() as temporary:
             video = Path(temporary) / "video.mp4"; video.write_bytes(b"video")
             audio = Path(temporary) / "audio.wav"; audio.write_bytes(b"audio")
@@ -62,12 +75,15 @@ class SessionFlowContractTest(unittest.TestCase):
                 patch("itspeak.jobs.extract_audio_track", return_value=audio), patch("itspeak.jobs.analyze_audio", return_value=audio_payload),
                 patch("itspeak.jobs.CoachingService", return_value=coach), patch("itspeak.jobs.update_manifest") as update,
             ):
-                report = analyze_session_task.run("a081b0b6-3264-40ac-8e42-ff03e907ca27")
+                report = analyze_session_task.run(session_id)
             self.assertTrue(video.exists())
             self.assertFalse(audio.exists())
             self.assertEqual(report["raw_analysis"]["frames_analyzed"], 10)
             write_landmarks.assert_called_once()
             self.assertTrue(any(call.kwargs.get("status") == "success" for call in update.call_args_list))
+            durable = self.persistence.get_session("user-1", session_id)
+            self.assertEqual(durable["sequence_number"], 1)
+            self.assertEqual(self.persistence.get_project("user-1", self.project["id"])["baseline_session_id"], session_id)
 
 
 if __name__ == "__main__":

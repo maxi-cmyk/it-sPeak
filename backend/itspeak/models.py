@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from enum import Enum
+from datetime import date
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class Archetype(str, Enum):
@@ -177,6 +178,44 @@ class SessionStatus(BaseModel):
     result: Optional[CoachingReport] = None
     error: Optional[str] = None
     expires_at: str
+    project_id: Optional[str] = None
+    sequence_number: Optional[int] = None
+    is_baseline: bool = False
+    aggregates: Optional[dict[str, float | None]] = None
+
+
+class ProjectCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    goal: Optional[str] = Field(None, max_length=1000)
+    deadline: Optional[date] = None
+    pinned: bool = False
+    default_archetype_key: str = "corporate_board"
+
+    @field_validator("name")
+    @classmethod
+    def project_name_must_have_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Project name is required")
+        return value
+
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=120)
+    goal: Optional[str] = Field(None, max_length=1000)
+    deadline: Optional[date] = None
+    pinned: Optional[bool] = None
+    default_archetype_key: Optional[str] = None
+
+    @field_validator("name")
+    @classmethod
+    def updated_name_must_have_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        value = value.strip()
+        if not value:
+            raise ValueError("Project name is required")
+        return value
 
 
 # Kept as aliases for code importing the earlier contract names.

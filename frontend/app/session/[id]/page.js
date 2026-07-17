@@ -8,7 +8,7 @@ import RatingBar from "@/components/RatingBar";
 import ScoreRing from "@/components/ScoreRing";
 import VideoAnalysisPlayer from "@/components/VideoAnalysisPlayer";
 import { getSessionAnalysis } from "@/lib/api";
-import { getSessionById, formatDate } from "@/lib/data";
+import { formatDate } from "@/lib/data";
 import { reportToSession } from "@/lib/reportAdapter";
 
 const SkillRadar = dynamic(() => import("@/components/SkillRadar"), { ssr: false });
@@ -16,31 +16,18 @@ const TimelineChart = dynamic(() => import("@/components/TimelineChart"), { ssr:
 
 export default function SessionSummaryPage() {
   const { id } = useParams();
-  const [session, setSession] = useState(() => getSessionById(id));
+  const [session, setSession] = useState(null);
   const [error, setError] = useState(null);
-  const [accessToken, setAccessToken] = useState(null);
 
   useEffect(() => {
-    if (getSessionById(id)) return;
-    const projectId = new URLSearchParams(window.location.search).get("projectId") || "1";
-    const cached = sessionStorage.getItem(`itspeak:session:${id}`);
-    const metadata = cached ? JSON.parse(cached) : null;
-    if (!metadata?.accessToken) {
-      setError("This temporary analysis link has expired or is unavailable in this browser.");
-      return;
-    }
-    setAccessToken(metadata.accessToken);
-    if (metadata.report) {
-      setSession(reportToSession(metadata.report, id, projectId, metadata.qualityGate));
-      return;
-    }
     const controller = new AbortController();
-    getSessionAnalysis(id, metadata.accessToken, controller.signal)
+    getSessionAnalysis(id, controller.signal)
       .then((payload) => {
         if (payload.status !== "success" || !payload.result) {
           throw new Error("This analysis is not ready yet.");
         }
-        setSession(reportToSession(payload.result, id, projectId, payload.quality_gate));
+        const view = reportToSession(payload.result, id, payload.project_id, payload.quality_gate);
+        setSession({ ...view, name: payload.sequence_number ? `Session ${payload.sequence_number}` : view.name, score: payload.aggregates?.overall_score ?? view.score, overallScore: payload.aggregates?.overall_score ?? view.overallScore, tone: payload.aggregates?.vocal_score ?? view.tone, face: payload.aggregates?.face_score ?? view.face, body: payload.aggregates?.body_score ?? view.body });
       })
       .catch((requestError) => {
         if (requestError.name !== "AbortError") setError(requestError.message);
@@ -74,9 +61,7 @@ export default function SessionSummaryPage() {
           </div>
         </div>
 
-        {accessToken && (
-          <VideoAnalysisPlayer sessionId={id} token={accessToken} analysis={session.rawAnalysis} qualityGate={session.qualityGate} />
-        )}
+        <VideoAnalysisPlayer sessionId={id} analysis={session.rawAnalysis} qualityGate={session.qualityGate} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">

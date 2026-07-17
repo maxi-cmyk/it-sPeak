@@ -1,27 +1,27 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getLandmarks, getVideoUrl } from "@/lib/api";
+import { getLandmarksFromUrl, getSessionArtifacts } from "@/lib/api";
 import { containViewport, decodePoint, eyeContactIntervals, frameAtTime } from "@/lib/overlayMath.mjs";
 
 const POSE_CONNECTIONS = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
 const STATE_COLORS = { on_camera: "#34d399", away: "#f59e0b", unknown: "#52525b" };
 
-export default function VideoAnalysisPlayer({ sessionId, token, analysis, qualityGate }) {
+export default function VideoAnalysisPlayer({ sessionId, analysis, qualityGate }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const [artifact, setArtifact] = useState(null);
+  const [videoUrl, setVideoUrl] = useState(null);
   const [error, setError] = useState(null);
   const [toggles, setToggles] = useState({ face: true, skeleton: true, eye: true });
-  const videoUrl = useMemo(() => getVideoUrl(sessionId, token), [sessionId, token]);
   const intervals = useMemo(() => eyeContactIntervals(artifact?.frames, artifact?.duration_seconds), [artifact]);
 
   useEffect(() => {
     const controller = new AbortController();
-    getLandmarks(sessionId, token, controller.signal).then(setArtifact).catch((requestError) => { if (requestError.name !== "AbortError") setError(requestError.message); });
+    getSessionArtifacts(sessionId, controller.signal).then((urls) => { setVideoUrl(urls.video || null); return urls.landmarks ? getLandmarksFromUrl(urls.landmarks, controller.signal) : null; }).then((payload) => { if (payload) setArtifact(payload); }).catch((requestError) => { if (requestError.name !== "AbortError") setError(requestError.message); });
     return () => controller.abort();
-  }, [sessionId, token]);
+  }, [sessionId]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -69,7 +69,7 @@ export default function VideoAnalysisPlayer({ sessionId, token, analysis, qualit
         <div className="flex gap-2" aria-label="Overlay controls">{Object.entries({ face: "Face", skeleton: "Skeleton", eye: "Eye contact" }).map(([key, label]) => <button key={key} aria-pressed={toggles[key]} onClick={() => setToggles((current) => ({ ...current, [key]: !current[key] }))} className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${toggles[key] ? "border-violet-400/60 bg-violet-500/15 text-violet-200" : "border-zinc-700 text-zinc-500"}`}>{label}</button>)}</div>
       </div>
       <div className="relative overflow-hidden rounded-xl bg-black aspect-video">
-        <video ref={videoRef} src={videoUrl} controls preload="metadata" playsInline crossOrigin="anonymous" referrerPolicy="no-referrer" className="h-full w-full object-contain" />
+        {videoUrl ? <video ref={videoRef} src={videoUrl} controls preload="metadata" playsInline crossOrigin="anonymous" referrerPolicy="no-referrer" className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center text-sm text-zinc-600">Preparing secure playback…</div>}
         <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true" />
       </div>
       {error && <p className="mt-3 text-xs text-red-300">Overlays unavailable: {error}</p>}

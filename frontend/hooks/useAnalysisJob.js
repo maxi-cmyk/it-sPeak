@@ -3,35 +3,35 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { confirmSession, getSessionAnalysis, uploadSession } from "@/lib/api";
 
-const INITIAL_STATE = { sessionId: null, accessToken: null, status: "idle", stage: null, error: null, result: null, qualityGate: null };
+const INITIAL_STATE = { sessionId: null, status: "idle", stage: null, error: null, result: null, qualityGate: null, replacement: null };
 
 export default function useAnalysisJob() {
   const [job, setJob] = useState(INITIAL_STATE);
   const controllerRef = useRef(null);
 
-  const start = useCallback(async ({ file, projectId, archetype, audienceContext }) => {
+  const start = useCallback(async ({ file, projectId, archetype, audienceContext, replaceSessionId }) => {
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
     setJob({ ...INITIAL_STATE, status: "uploading", stage: "Uploading video securely" });
     try {
-      const accepted = await uploadSession({ file, projectId, archetype, audienceContext, signal: controller.signal });
-      const metadata = { accessToken: accepted.access_token, projectId, expiresAt: accepted.expires_at };
+      const accepted = await uploadSession({ file, projectId, archetype, audienceContext, replaceSessionId, signal: controller.signal });
+      const metadata = { projectId, expiresAt: accepted.expires_at };
       sessionStorage.setItem(`itspeak:session:${accepted.session_id}`, JSON.stringify(metadata));
-      setJob({ ...INITIAL_STATE, sessionId: accepted.session_id, accessToken: accepted.access_token, status: accepted.status, stage: "Checking recording quality" });
+      setJob({ ...INITIAL_STATE, sessionId: accepted.session_id, status: accepted.status, stage: "Checking recording quality" });
     } catch (error) {
-      if (error.name !== "AbortError") setJob({ ...INITIAL_STATE, status: "failure", error: error.message });
+      if (error.name !== "AbortError") setJob({ ...INITIAL_STATE, status: error.code === "replacement_required" ? "replacement_required" : "failure", error: error.message, replacement: error.code === "replacement_required" ? { candidates: error.candidates, file, projectId, archetype, audienceContext } : null });
     }
   }, []);
 
   useEffect(() => {
-    if (!job.sessionId || !job.accessToken || ["success", "failure", "rejected", "needs_confirmation"].includes(job.status)) return;
+    if (!job.sessionId || ["success", "failure", "rejected", "needs_confirmation"].includes(job.status)) return;
     const controller = new AbortController();
     let active = true;
     let timeoutId;
     const poll = async () => {
       try {
-        const payload = await getSessionAnalysis(job.sessionId, job.accessToken, controller.signal);
+        const payload = await getSessionAnalysis(job.sessionId, controller.signal);
         if (!active) return;
         if (payload.status === "success" && payload.result) {
           const key = `itspeak:session:${job.sessionId}`;
@@ -46,18 +46,23 @@ export default function useAnalysisJob() {
     };
     poll();
     return () => { active = false; controller.abort(); window.clearTimeout(timeoutId); };
-  }, [job.sessionId, job.accessToken, job.status]);
+  }, [job.sessionId, job.status]);
 
   const confirm = useCallback(async () => {
     setJob((current) => ({ ...current, status: "queued", stage: "Waiting for full analysis" }));
     try {
-      const payload = await confirmSession(job.sessionId, job.accessToken);
+      const payload = await confirmSession(job.sessionId);
       setJob((current) => ({ ...current, status: payload.status, stage: payload.stage }));
     } catch (error) {
       setJob((current) => ({ ...current, status: "failure", error: error.message }));
     }
-  }, [job.sessionId, job.accessToken]);
+  }, [job.sessionId]);
+
+  const chooseReplacement = useCallback((replaceSessionId) => {
+    if (!job.replacement) return;
+    start({ ...job.replacement, replaceSessionId });
+  }, [job.replacement, start]);
 
   const reset = useCallback(() => { controllerRef.current?.abort(); setJob(INITIAL_STATE); }, []);
-  return { ...job, start, confirm, reset };
+  return { ...job, start, confirm, chooseReplacement, reset };
 }

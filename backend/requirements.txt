@@ -20,6 +20,7 @@ openai==1.59.7
 librosa==0.10.2
 numba==0.60.0
 python-multipart==0.0.20
+httpx==0.28.1
 
 # NOTE: the `ffmpeg` and `ffprobe` *binaries* must also be installed and on PATH
 # (or point ITSPEAK_FFMPEG_BIN / ITSPEAK_FFPROBE_BIN at them). They are NOT pip

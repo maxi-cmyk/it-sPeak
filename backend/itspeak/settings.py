@@ -1,6 +1,7 @@
 """Runtime configuration loaded from environment variables / ``.env``."""
 
 from functools import lru_cache
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -41,6 +42,24 @@ class Settings(BaseSettings):
     max_upload_bytes: int = 250 * 1024 * 1024
     artifact_retention_seconds: int = 24 * 60 * 60
     cleanup_interval_seconds: int = 60 * 60
+
+    environment: str = "development"
+    dev_user_id: str = "dev_user"
+    supabase_url: str = ""
+    supabase_publishable_key: str = ""
+    supabase_secret_key: str = ""
+    supabase_storage_bucket: str = "session-artifacts"
+    signed_url_ttl_seconds: int = 300
+
+    @model_validator(mode="after")
+    def reject_production_dev_identity(self):
+        if self.environment.lower() == "production" and self.dev_user_id:
+            raise ValueError("ITSPEAK_DEV_USER_ID must be empty in production")
+        return self
+
+    @property
+    def supabase_configured(self) -> bool:
+        return bool(self.supabase_url and self.supabase_secret_key)
 
 
 @lru_cache

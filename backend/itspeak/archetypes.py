@@ -19,7 +19,6 @@ ARCHETYPE_REGISTRY = (
     ArchetypeDefinition("academic_conference", "Academic / Conference", "planned"),
     ArchetypeDefinition("informal_team", "Informal / Team", "planned"),
     ArchetypeDefinition("job_interview", "Job Interview", "planned"),
-    ArchetypeDefinition("custom", "Custom", "planned"),
 )
 
 

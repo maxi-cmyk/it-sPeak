@@ -100,9 +100,9 @@ The gate retains raw measurements alongside configurable thresholds so calibrati
 | Startup Pitch, Academic/Conference, Informal/Team, Job Interview, and Custom archetypes | Scaffolded |
 | Rule-based archetype recommendation quiz | Planned |
 | Project folders and dashboard experience | Frontend prototype |
-| Supabase authentication and persistence | Schema/adapter scaffold |
-| Cloudflare R2 retained video storage | Adapter boundary scaffold |
-| Five-session project limit and protected Session 1 baseline | Planned |
+| Clerk-ready authentication boundary and Supabase persistence | Implemented; Clerk dashboard setup remains |
+| Private Supabase retained video storage | Implemented |
+| Five-session project limit and protected Session 1 baseline | Implemented |
 | Progress deltas, stagnation alerts, Best Session Replay, and Coaching Playbook | Planned |
 | Railway/Vercel production deployment | Planned |
 
@@ -122,7 +122,7 @@ flowchart LR
     STORE -->|range video and gzip landmarks| UI
 ```
 
-The current local implementation uses opaque, token-protected temporary files outside the webroot. Videos and landmark artifacts expire after 24 hours. Supabase and Cloudflare R2 are the intended production persistence boundaries but are not active yet.
+Uploads remain in an opaque temporary store while quality checks and analysis run. Successful sessions, reports, coaching cards, videos, and landmark artifacts are committed to Supabase; rejected or failed uploads expire without consuming a project session number.
 
 ## Technology
 
@@ -136,7 +136,7 @@ The current local implementation uses opaque, token-protected temporary files ou
 | Vocal analysis | Librosa and NumPy |
 | Transcription and coaching | OpenAI Whisper and configurable OpenAI coaching model |
 | Local artifacts | Private filesystem store with bearer tokens and 24-hour retention |
-| Future persistence | Supabase and Cloudflare R2 scaffolds |
+| Durable persistence | Supabase Postgres and private Supabase Storage |
 
 ## Repository Layout
 
@@ -215,6 +215,17 @@ Set `ITSPEAK_OPENAI_API_KEY` in `backend/.env`. On Windows, also set
 `/tmp/itspeak-sessions` is a Unix path.
 
 macOS / Linux:
+
+Create or link a Supabase project, then apply the migration:
+
+```bash
+supabase link --project-ref YOUR_PROJECT_REF
+supabase db push
+```
+
+Alternatively, paste `backend/persistence/schema.sql` into the Supabase SQL Editor for a new empty project. Set `ITSPEAK_SUPABASE_URL` and the backend-only `ITSPEAK_SUPABASE_SECRET_KEY`. Never place the secret key in a `NEXT_PUBLIC_*` variable.
+
+Local development uses `ITSPEAK_DEV_USER_ID`. Before production, clear that value and implement the Clerk verifier behind `itspeak.auth.get_auth_principal`; the schema already expects the Clerk JWT `sub` claim and `supabase/config.toml` contains the deferred third-party-provider hook.
 
 ```bash
 cd ../frontend
@@ -296,15 +307,19 @@ Open [http://localhost:3000](http://localhost:3000). The API defaults to [http:/
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
+| `GET/POST` | `/projects` | List or create owned rehearsal projects |
+| `GET/PATCH/DELETE` | `/projects/{id}` | Read, edit, or delete an owned project |
+| `GET` | `/projects/{id}/sessions` | List retained project sessions |
 | `POST` | `/sessions` | Upload a private video and begin the quality gate |
 | `GET` | `/sessions/{id}` | Read authenticated gate, job, and result state |
 | `POST` | `/sessions/{id}/confirm` | Continue past warning-level quality limitations |
+| `GET` | `/sessions/{id}/artifacts` | Create short-lived signed artifact URLs |
 | `GET` | `/sessions/{id}/video` | Stream authenticated video with HTTP byte ranges |
 | `GET` | `/sessions/{id}/landmarks` | Retrieve the versioned gzip landmark artifact |
 | `GET` | `/archetypes` | List enabled and planned speaking archetypes |
 | `GET` | `/healthz` | API health check |
 
-Session access tokens are returned only when a session is created. Do not log them or place them in persistent public URLs.
+Temporary session access tokens are retained only for one-release compatibility. The persisted frontend uses owner-authenticated APIs and short-lived signed Storage URLs instead of saving those tokens.
 
 ## Verification
 
@@ -341,7 +356,7 @@ The cadence check fails when 5 fps changes the movement classification or differ
 
 ## Current Boundaries
 
-- Local sessions are temporary and expire after 24 hours; the PRD's retained five-session project history requires the R2 and Supabase phase.
+- Pending and failed sessions are temporary and expire after 24 hours; successful sessions are retained privately in Supabase.
 - Only two archetypes currently have active calibration. Planned archetypes must not be presented as scored modes until their thresholds and tests exist.
 - Smile naturalness is intentionally labelled as a proxy while the current MediaPipe stack is retained.
 - Results are rehearsal feedback, not medical, psychological, employment, or clinical assessment.
