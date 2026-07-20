@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
 
 export default function Navbar({ backHref }) {
   const router = useRouter();
@@ -29,9 +30,21 @@ export default function Navbar({ backHref }) {
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
         </button>
-        <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-sm font-semibold text-white select-none">
-          M
-        </div>
+        <Show when="signed-out">
+          <SignInButton>
+            <button className="text-sm font-medium text-zinc-400 hover:text-zinc-50 transition-colors">
+              Sign in
+            </button>
+          </SignInButton>
+          <SignUpButton>
+            <button className="text-sm font-medium px-3 py-1.5 rounded-md bg-violet-600 hover:bg-violet-500 text-white transition-colors">
+              Sign up
+            </button>
+          </SignUpButton>
+        </Show>
+        <Show when="signed-in">
+          <UserButton />
+        </Show>
       </div>
     </nav>
   );
