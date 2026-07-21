@@ -19,9 +19,7 @@ Build the PRD's project-folder and progress-tracking system on top of the workin
 
 [~] **Create one progress service with explicit comparability rules — in progress.** Done: durable reports retain absolute archetype-calibrated scores, aggregate scores, metric confidence, archetype keys, and scoring-config versions. Remaining: implement the versioned progress service, previous/baseline deltas, metric intersections, `non_normalised` safeguards, confidence/comparability metadata, and API payload.
 
-[ ] **Build the project progress experience — not started.** Add delta cards for previous-session and Session 1 comparisons; an overlaid Vocal/Face/Body radar or trend view; immutable session labels; and visible archetype dividers/annotation icons whenever the archetype changes. Use distinct styling and explanatory copy for `non_normalised`, low-confidence, missing-metric, and baseline-only states. Ensure charts remain readable with five sessions and do not present incomparable polygons as direct improvement.
-
-[ ] **User specified improvement** User is able to specify fields of improvement (1 or more) (multi select choice) when project is created. However, if score > 80 for a chosen metric, feedback to user that they are proficient enough in this area and should work on other identified areas (lowest score highest prio)
+[~] **User specified improvement** User is able to specify fields of improvement (1 or more) (multi select choice) when project is created. However, if score > 80 for a chosen metric, feedback to user that they are proficient enough in this area and should work on other identified areas (lowest score highest prio)
 
 [~] **Feedback for stagnant progress — logic implemented.** Done: `backend/itspeak/progress.py` compares a session to its reference and, per shared metric, flags any gain below the configurable `ITSPEAK_STAGNATION_MIN_DELTA` (default 5) as `stagnant`, and any regression as `declining`, producing "you're not improving in this metric" feedback. Comparability is protected: no reference (baseline), a changed archetype, or missing optional metrics return no false signals. The signals are attached to the coaching report (`CoachingReport.stagnation`) and covered by `tests/test_stagnation.py`. Remaining: drive the comparison off the actual previous comparable session once the progress service lands (currently uses the baseline reference), surface the signals in the progress UI, and attach a relevant practice video link from our database.
 
@@ -31,7 +29,4 @@ Build the PRD's project-folder and progress-tracking system on top of the workin
 
 [~] **Verify the complete lifecycle before enabling the feature — in progress.** Done: 20 backend tests and 9 frontend tests pass, including Clerk token acceptance/rejection, missing-auth fail-closed behavior, owner isolation, baseline assignment, the five-session boundary, project CRUD, authenticated API headers, replacement filtering, schema parity, artifact access, and analysis contracts; the current Next.js production build passes, and the live Supabase migration/function/pgcrypto configuration is verified. Remaining: add the listed concurrency, stale replacement, reset, progress, stagnation, replay, playbook, RLS, cleanup, and frontend lifecycle cases, then run both same- and changed-archetype Sessions 1-6 end-to-end scenarios.
 
-## Open questions
-- Resolved: the selected replacement is committed only after the new analysis succeeds.
-- Is a two-point score increase the initial minimum meaningful improvement for stagnation detection, or should that threshold vary by metric/archetype?
-- Should the Coaching Playbook contain only cards the user explicitly saves, as recommended here, or automatically collect every generated card?
+[ ] vocial variety rename to vocab variety  
