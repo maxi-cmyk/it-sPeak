@@ -161,6 +161,116 @@ ARCHETYPE_PRESETS: dict[Archetype, ArchetypeConfig] = {
         spatial_use=FloorBand(low=0.10, ideal=0.65),
         gesture_freq_weight=0.4,
     ),
+    # ------------------------------------------------------------------ #
+    # Startup Pitch: persuasive and energetic, but credible. More dynamic
+    # than a boardroom, more disciplined than a keynote. Strong eye contact to
+    # build investor trust, animated (not theatrical) expression, and
+    # purposeful, moderately expansive gestures that emphasise key points.
+    # ------------------------------------------------------------------ #
+    Archetype.STARTUP_PITCH: ArchetypeConfig(
+        key=Archetype.STARTUP_PITCH,
+        label="Startup Pitch",
+        description=(
+            "A high-conviction investor or demo-day pitch. Presence is built on "
+            "credible energy: strong, trust-building eye contact, animated but "
+            "controlled expression, upright confident posture, and purposeful, "
+            "moderately expansive gestures that punctuate key claims. Flat "
+            "delivery reads as unconvincing; frantic, over-large motion reads as "
+            "nervous and undercuts credibility."
+        ),
+        eye_contact=FloorBand(low=0.30, ideal=0.72),
+        expression=FloorBand(low=0.25, ideal=0.65),
+        posture=FloorBand(low=0.45, ideal=0.88),
+        gesture_frequency=TargetBand(ideal=0.50, tol_low=0.40, tol_high=0.45),
+        gesture_range=TargetBand(ideal=0.50, tol_low=0.40, tol_high=0.45),
+        openness=FloorBand(low=0.35, ideal=0.75),
+        smile_naturalness=FloorBand(low=0.20, ideal=0.70),
+        movement_purposefulness=FloorBand(low=0.30, ideal=0.82),
+        spatial_use=TargetBand(ideal=0.45, tol_low=0.40, tol_high=0.45),
+        gesture_freq_weight=0.5,
+    ),
+    # ------------------------------------------------------------------ #
+    # Academic / Conference: clarity and precision at the lectern. Measured,
+    # credible delivery. Eye contact is moderate (slides/notes are referenced),
+    # expression is controlled, and gestures are restrained and precise.
+    # Podium-bound, so stage movement should be minimal.
+    # ------------------------------------------------------------------ #
+    Archetype.ACADEMIC_CONFERENCE: ArchetypeConfig(
+        key=Archetype.ACADEMIC_CONFERENCE,
+        label="Academic / Conference",
+        description=(
+            "A scholarly conference talk or lecture. Presence is built on clarity "
+            "and precision: measured, controlled facial expression, upright "
+            "posture, and restrained, deliberate gestures that clarify structure. "
+            "Moderate eye contact is expected because slides and notes are "
+            "referenced. Theatrical animation or wide roaming gestures distract "
+            "from the substance."
+        ),
+        eye_contact=FloorBand(low=0.25, ideal=0.60),
+        expression=TargetBand(ideal=0.40, tol_low=0.35, tol_high=0.45),
+        posture=FloorBand(low=0.45, ideal=0.88),
+        gesture_frequency=TargetBand(ideal=0.35, tol_low=0.30, tol_high=0.45),
+        gesture_range=TargetBand(ideal=0.30, tol_low=0.28, tol_high=0.42),
+        openness=FloorBand(low=0.25, ideal=0.60),
+        smile_naturalness=FloorBand(low=0.10, ideal=0.55),
+        movement_purposefulness=FloorBand(low=0.20, ideal=0.72),
+        spatial_use=TargetBand(ideal=0.25, tol_low=0.25, tol_high=0.50),
+        gesture_freq_weight=0.55,
+    ),
+    # ------------------------------------------------------------------ #
+    # Informal / Team: relaxed, conversational and approachable. Natural
+    # (not intense) eye contact, warm expression, and easy natural gestures with
+    # a wide tolerance. Posture and movement expectations are the most
+    # forgiving of any archetype.
+    # ------------------------------------------------------------------ #
+    Archetype.INFORMAL_TEAM: ArchetypeConfig(
+        key=Archetype.INFORMAL_TEAM,
+        label="Informal / Team",
+        description=(
+            "A relaxed team stand-up, update or internal discussion. Presence is "
+            "built on warmth and approachability: natural conversational eye "
+            "contact, warm animated expression, an easy relaxed posture, and "
+            "natural hand gestures. Delivery should feel unforced; stiff, "
+            "over-controlled behaviour reads as tense rather than collaborative."
+        ),
+        eye_contact=FloorBand(low=0.20, ideal=0.55),
+        expression=FloorBand(low=0.25, ideal=0.70),
+        posture=FloorBand(low=0.35, ideal=0.78),
+        gesture_frequency=TargetBand(ideal=0.50, tol_low=0.45, tol_high=0.55),
+        gesture_range=TargetBand(ideal=0.50, tol_low=0.45, tol_high=0.55),
+        openness=FloorBand(low=0.30, ideal=0.75),
+        smile_naturalness=FloorBand(low=0.20, ideal=0.70),
+        movement_purposefulness=FloorBand(low=0.15, ideal=0.65),
+        spatial_use=FloorBand(low=0.10, ideal=0.55),
+        gesture_freq_weight=0.5,
+    ),
+    # ------------------------------------------------------------------ #
+    # Job Interview: composed, professional and attentive (typically seated).
+    # Very steady eye contact signals engagement and honesty, expression is warm
+    # but measured, posture is notably upright, and gestures are minimal and
+    # contained. Stage/spatial movement should be almost none.
+    # ------------------------------------------------------------------ #
+    Archetype.JOB_INTERVIEW: ArchetypeConfig(
+        key=Archetype.JOB_INTERVIEW,
+        label="Job Interview",
+        description=(
+            "A one-on-one or panel job interview, usually seated. Presence is "
+            "built on composed professionalism: steady, engaged eye contact, a "
+            "warm but measured expression, a notably upright posture, and "
+            "minimal, contained gestures. A genuine smile builds rapport. "
+            "Fidgeting, slumping or large sweeping gestures undermine composure."
+        ),
+        eye_contact=FloorBand(low=0.35, ideal=0.78),
+        expression=TargetBand(ideal=0.45, tol_low=0.35, tol_high=0.45),
+        posture=FloorBand(low=0.50, ideal=0.90),
+        gesture_frequency=TargetBand(ideal=0.30, tol_low=0.28, tol_high=0.42),
+        gesture_range=TargetBand(ideal=0.25, tol_low=0.25, tol_high=0.40),
+        openness=FloorBand(low=0.30, ideal=0.65),
+        smile_naturalness=FloorBand(low=0.20, ideal=0.70),
+        movement_purposefulness=FloorBand(low=0.20, ideal=0.70),
+        spatial_use=TargetBand(ideal=0.15, tol_low=0.15, tol_high=0.45),
+        gesture_freq_weight=0.6,
+    ),
 }
 
 

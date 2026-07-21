@@ -37,8 +37,13 @@ class ProjectApiTest(unittest.TestCase):
         self.assertEqual(deleted.status_code, 204)
         self.assertEqual(self.client.get("/projects").json(), [])
 
-    def test_planned_archetype_cannot_be_selected(self):
+    def test_enabled_archetype_can_be_selected(self):
         response = self.client.post("/projects", json={"name": "Pitch", "default_archetype_key": "startup_pitch"})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["default_archetype_key"], "startup_pitch")
+
+    def test_unsupported_archetype_cannot_be_selected(self):
+        response = self.client.post("/projects", json={"name": "Pitch", "default_archetype_key": "not_a_real_archetype"})
         self.assertEqual(response.status_code, 422)
 
 
