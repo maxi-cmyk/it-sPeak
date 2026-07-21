@@ -65,10 +65,29 @@ export default function SessionSummaryPage() {
 
         <VideoAnalysisPlayer sessionId={id} analysis={session.rawAnalysis} qualityGate={session.qualityGate} />
 
+        <section className="mb-6 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+          <div className="border-b border-zinc-800 px-5 py-4">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-violet-400">Your selected focus</p>
+            <h2 className="mt-1 text-base font-semibold text-zinc-100">Lowest score leads the next rehearsal</h2>
+          </div>
+          <div className="grid gap-px bg-zinc-800 sm:grid-flow-col sm:auto-cols-fr">
+            {session.improvementGuidance.map((item) => (
+              <div key={item.area} className="bg-zinc-900 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">Priority {item.priority}</span>
+                  <span className={`text-lg font-semibold ${item.proficient ? "text-emerald-400" : item.priority === 1 ? "text-amber-300" : "text-zinc-200"}`}>{Math.round(item.score)}</span>
+                </div>
+                <p className={`mt-3 text-sm leading-6 ${item.proficient ? "text-emerald-200" : "text-zinc-300"}`}>{item.message}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
             <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Coaching priorities</h2>
             <div className="flex flex-col gap-4">
+              {session.feedback.length === 0 && <p className="text-sm leading-6 text-emerald-300">Your selected areas are above the coaching threshold. Maintain them or add another improvement field to your project.</p>}
               {session.feedback.map((item, index) => (
                 <div key={`${item.text}-${index}`} className="flex gap-3">
                   <span className="text-lg flex-shrink-0 mt-0.5">{item.icon}</span>

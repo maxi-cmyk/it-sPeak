@@ -1,5 +1,13 @@
+import { improvementAreaValues } from "./improvementAreas.mjs";
+
 export function projectFromApi(project) {
-  return { ...project, description: project.goal || "", deadline: project.deadline || "", archetype: project.default_archetype_key };
+  return {
+    ...project,
+    description: project.goal || "",
+    deadline: project.deadline || "",
+    archetype: project.default_archetype_key,
+    improvementAreas: project.improvement_areas || improvementAreaValues,
+  };
 }
 
 export function eligibleReplacementSessions(sessions, baselineSessionId = null) {

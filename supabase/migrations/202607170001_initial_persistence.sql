@@ -44,6 +44,10 @@ create table public.projects (
   owner_id text not null references public.profiles(id) on delete cascade,
   name text not null check (length(btrim(name)) between 1 and 120),
   goal text check (goal is null or length(goal) <= 1000),
+  improvement_areas text[] not null default array['pacing', 'intonation', 'filler_words', 'eye_contact', 'facial_expression', 'posture', 'gestures']::text[] check (
+    cardinality(improvement_areas) > 0
+    and improvement_areas <@ array['pacing', 'intonation', 'filler_words', 'eye_contact', 'facial_expression', 'posture', 'gestures']::text[]
+  ),
   default_archetype_key text not null references public.archetypes(key),
   default_archetype_version integer not null default 1 check (default_archetype_version > 0),
   deadline date,

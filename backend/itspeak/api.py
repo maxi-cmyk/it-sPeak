@@ -15,7 +15,7 @@ from .archetypes import list_archetypes
 from .auth import AuthPrincipal, get_auth_principal
 from .artifact_store import authorize, create_session, landmarks_path, read_manifest, session_dir, update_manifest, video_path
 from .jobs import _enqueue_analysis, quality_check_task
-from .models import Archetype, CoachingReport, ProjectCreate, ProjectUpdate, QualityGateReport, SessionAccepted, SessionStatus
+from .models import Archetype, CoachingReport, ImprovementArea, ProjectCreate, ProjectUpdate, QualityGateReport, SessionAccepted, SessionStatus
 from .persistence import NotFoundError, PersistenceError, ReplacementRequired, get_persistence
 from .settings import get_settings
 from .uploads import save_session_video
@@ -64,7 +64,14 @@ async def create_analysis_session(
     project = persistence.get_project(principal.user_id, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    manifest, token = create_session({"project_id": project_id, "owner_id": principal.user_id, "archetype": archetype.value, "audience_context": audience_context[:300], "replace_session_id": replace_session_id})
+    manifest, token = create_session({
+        "project_id": project_id,
+        "owner_id": principal.user_id,
+        "archetype": archetype.value,
+        "audience_context": audience_context[:300],
+        "replace_session_id": replace_session_id,
+        "improvement_areas": project.get("improvement_areas", [area.value for area in ImprovementArea]),
+    })
     try:
         persistence.create_pending_session({"id": manifest["session_id"], "project_id": project_id, "owner_id": principal.user_id, "archetype_key": archetype.value, "audience_context": audience_context[:300], "replace_session_id": replace_session_id})
         path = await save_session_video(manifest["session_id"], file)

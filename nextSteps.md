@@ -21,7 +21,7 @@ Build the PRD's project-folder and progress-tracking system on top of the workin
 
 [ ] **Build the project progress experience — not started.** Add delta cards for previous-session and Session 1 comparisons; an overlaid Vocal/Face/Body radar or trend view; immutable session labels; and visible archetype dividers/annotation icons whenever the archetype changes. Use distinct styling and explanatory copy for `non_normalised`, low-confidence, missing-metric, and baseline-only states. Ensure charts remain readable with five sessions and do not present incomparable polygons as direct improvement.
 
-[ ] **User specified improvement** User is able to specify fields of improvement (multi select choice) when project is created. However, if score > 80 for a chosen metric, feedback to user that they are proficient enough in this area and should work on other identified areas (lowest score highest prio)
+[ ] **User specified improvement** User is able to specify fields of improvement (1 or more) (multi select choice) when project is created. However, if score > 80 for a chosen metric, feedback to user that they are proficient enough in this area and should work on other identified areas (lowest score highest prio)
 
 [ ] **Feedback for stagnant progress** If the user has stagnant process (delta < 5), send feedback that user is not improving in a gien metric. attach a link to a video (from our database) on relevant topic
 

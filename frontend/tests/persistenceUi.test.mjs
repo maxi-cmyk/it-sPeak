@@ -3,11 +3,12 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { eligibleReplacementSessions, projectFromApi } from "../lib/persistenceUi.mjs";
 
-test("project API rows map onto the existing card contract", () => {
-  const project = projectFromApi({ id: "p1", goal: "Prepare the pitch", default_archetype_key: "corporate_board", deadline: null });
+test("project API rows map improvement areas onto the card contract", () => {
+  const project = projectFromApi({ id: "p1", goal: "Prepare the pitch", default_archetype_key: "corporate_board", deadline: null, improvement_areas: ["pacing", "gestures"] });
   assert.equal(project.description, "Prepare the pitch");
   assert.equal(project.archetype, "corporate_board");
   assert.equal(project.deadline, "");
+  assert.deepEqual(project.improvementAreas, ["pacing", "gestures"]);
 });
 
 test("replacement choices defensively exclude Session 1 and retired sessions", () => {

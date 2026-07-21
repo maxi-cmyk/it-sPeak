@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDate, getDaysUntilDeadline } from "@/lib/data";
+import { improvementAreaLabels } from "@/lib/improvementAreas.mjs";
 
 export default function ProjectCard({ project, onPin, onEdit, onDelete }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -33,6 +34,14 @@ export default function ProjectCard({ project, onPin, onEdit, onDelete }) {
       </div>
 
       <p className="text-zinc-500 text-sm leading-relaxed mb-4 line-clamp-2">{project.description}</p>
+
+      <div className="mb-4 flex flex-wrap gap-1.5">
+        {(project.improvementAreas || []).map((area) => (
+          <span key={area} className="rounded-full border border-violet-500/20 bg-violet-500/5 px-2 py-1 text-[10px] font-medium text-violet-300">
+            {improvementAreaLabels[area] || area}
+          </span>
+        ))}
+      </div>
 
       <div className="flex items-center gap-1.5 text-xs">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-500">
