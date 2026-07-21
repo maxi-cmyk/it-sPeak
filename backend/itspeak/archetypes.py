@@ -15,10 +15,10 @@ class ArchetypeDefinition:
 ARCHETYPE_REGISTRY = (
     ArchetypeDefinition("corporate_board", "Corporate / Board", "enabled"),
     ArchetypeDefinition("motivational_keynote", "Motivational / Keynote", "enabled"),
-    ArchetypeDefinition("startup_pitch", "Startup Pitch", "planned"),
-    ArchetypeDefinition("academic_conference", "Academic / Conference", "planned"),
-    ArchetypeDefinition("informal_team", "Informal / Team", "planned"),
-    ArchetypeDefinition("job_interview", "Job Interview", "planned"),
+    ArchetypeDefinition("startup_pitch", "Startup Pitch", "enabled"),
+    ArchetypeDefinition("academic_conference", "Academic / Conference", "enabled"),
+    ArchetypeDefinition("informal_team", "Informal / Team", "enabled"),
+    ArchetypeDefinition("job_interview", "Job Interview", "enabled"),
 )
 
 

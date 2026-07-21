@@ -12,6 +12,10 @@ from pydantic import BaseModel, Field, field_validator
 class Archetype(str, Enum):
     CORPORATE_BOARD = "corporate_board"
     MOTIVATIONAL_KEYNOTE = "motivational_keynote"
+    STARTUP_PITCH = "startup_pitch"
+    ACADEMIC_CONFERENCE = "academic_conference"
+    INFORMAL_TEAM = "informal_team"
+    JOB_INTERVIEW = "job_interview"
 
 
 class Module(str, Enum):
