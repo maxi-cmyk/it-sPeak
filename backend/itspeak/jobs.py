@@ -13,6 +13,7 @@ from .media import extract_audio_track
 from .models import AudioAnalysisResult, Archetype, ArtifactLinks, CoachingReport, ImprovementArea, ImprovementGuidance, Module, NormalizedScores, QualityDisposition
 from .pipeline import analyze_frames_with_artifacts, extract_frames
 from .persistence import get_persistence
+from .progress import detect_stagnation
 from .quality import run_quality_gate
 
 
@@ -171,6 +172,7 @@ def analyze_session_task(self, session_id: str) -> dict:
             cards=cards,
             improvement_areas=improvement_areas,
             progress=compute_progress(scores, baseline),
+            stagnation=detect_stagnation(scores, baseline, reference_label="your baseline session"),
             artifacts=ArtifactLinks(video=f"/sessions/{session_id}/video", landmarks=f"/sessions/{session_id}/landmarks"),
         )
         aggregates = _aggregates(report)

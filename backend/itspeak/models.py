@@ -69,6 +69,14 @@ class QualityDisposition(str, Enum):
     REJECT = "reject"
 
 
+class ProgressStatus(str, Enum):
+    """Direction of a metric relative to a comparable earlier session."""
+
+    IMPROVING = "improving"
+    STAGNANT = "stagnant"
+    DECLINING = "declining"
+
+
 class QualityIssue(BaseModel):
     code: str
     severity: str
@@ -175,6 +183,18 @@ class ImprovementGuidance(BaseModel):
     message: str
 
 
+class StagnationSignal(BaseModel):
+    """Feedback for a metric that is not meaningfully improving over time."""
+
+    metric: str
+    label: str
+    current_score: float
+    reference_score: float
+    delta: float
+    status: ProgressStatus
+    message: str
+
+
 class AudioAnalysisResult(BaseModel):
     summary: dict[str, Any]
     performance_scores: dict[str, float]
@@ -199,6 +219,7 @@ class CoachingReport(BaseModel):
     improvement_areas: list[ImprovementArea] = Field(default_factory=lambda: list(ImprovementArea), min_length=1)
     improvement_guidance: list[ImprovementGuidance] = Field(default_factory=list)
     progress: Optional[dict[str, float]] = None
+    stagnation: list[StagnationSignal] = Field(default_factory=list)
     artifacts: Optional[ArtifactLinks] = None
 
     @field_validator("improvement_areas", mode="before")
