@@ -24,6 +24,32 @@ class Module(str, Enum):
     AUDIO = "audio"
 
 
+class ImprovementArea(str, Enum):
+    PACING = "pacing"
+    INTONATION = "intonation"
+    FILLER_WORDS = "filler_words"
+    EYE_CONTACT = "eye_contact"
+    FACIAL_EXPRESSION = "facial_expression"
+    POSTURE = "posture"
+    GESTURES = "gestures"
+
+
+def _expand_legacy_improvement_areas(value: Any) -> Any:
+    if not isinstance(value, list):
+        return value
+    replacements = {
+        "voice": ["pacing", "intonation", "filler_words"],
+        "face": ["eye_contact", "facial_expression"],
+        "body": ["posture", "gestures"],
+    }
+    expanded: list[Any] = []
+    for area in value:
+        for replacement in replacements.get(area, [area]):
+            if replacement not in expanded:
+                expanded.append(replacement)
+    return expanded
+
+
 class MetricConfidence(str, Enum):
     HIGH = "high"
     MEDIUM = "medium"
@@ -149,6 +175,14 @@ class CoachingCard(BaseModel):
     actionable_fix: str
 
 
+class ImprovementGuidance(BaseModel):
+    area: ImprovementArea
+    score: float = Field(ge=0.0, le=100.0)
+    priority: int = Field(ge=1)
+    proficient: bool = False
+    message: str
+
+
 class StagnationSignal(BaseModel):
     """Feedback for a metric that is not meaningfully improving over time."""
 
@@ -182,9 +216,23 @@ class CoachingReport(BaseModel):
     raw_analysis: VideoAnalysisResult
     audio: AudioAnalysisResult
     cards: list[CoachingCard]
+    improvement_areas: list[ImprovementArea] = Field(default_factory=lambda: list(ImprovementArea), min_length=1)
+    improvement_guidance: list[ImprovementGuidance] = Field(default_factory=list)
     progress: Optional[dict[str, float]] = None
     stagnation: list[StagnationSignal] = Field(default_factory=list)
     artifacts: Optional[ArtifactLinks] = None
+
+    @field_validator("improvement_areas", mode="before")
+    @classmethod
+    def expand_legacy_improvement_areas(cls, value: Any) -> Any:
+        return _expand_legacy_improvement_areas(value)
+
+    @field_validator("improvement_guidance", mode="before")
+    @classmethod
+    def discard_legacy_improvement_guidance(cls, value: Any) -> Any:
+        if isinstance(value, list) and any(isinstance(item, dict) and item.get("area") in {"voice", "face", "body"} for item in value):
+            return []
+        return value
 
 
 class SessionAccepted(BaseModel):
@@ -215,6 +263,7 @@ class ProjectCreate(BaseModel):
     deadline: Optional[date] = None
     pinned: bool = False
     default_archetype_key: str = "corporate_board"
+    improvement_areas: list[ImprovementArea] = Field(default_factory=lambda: list(ImprovementArea), min_length=1)
 
     @field_validator("name")
     @classmethod
@@ -224,6 +273,13 @@ class ProjectCreate(BaseModel):
             raise ValueError("Project name is required")
         return value
 
+    @field_validator("improvement_areas")
+    @classmethod
+    def improvement_areas_must_be_unique(cls, value: list[ImprovementArea]) -> list[ImprovementArea]:
+        if len(value) != len(set(value)):
+            raise ValueError("Improvement areas must be unique")
+        return value
+
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=120)
@@ -231,6 +287,7 @@ class ProjectUpdate(BaseModel):
     deadline: Optional[date] = None
     pinned: Optional[bool] = None
     default_archetype_key: Optional[str] = None
+    improvement_areas: Optional[list[ImprovementArea]] = Field(None, min_length=1)
 
     @field_validator("name")
     @classmethod
@@ -240,6 +297,13 @@ class ProjectUpdate(BaseModel):
         value = value.strip()
         if not value:
             raise ValueError("Project name is required")
+        return value
+
+    @field_validator("improvement_areas")
+    @classmethod
+    def updated_improvement_areas_must_be_unique(cls, value: list[ImprovementArea] | None) -> list[ImprovementArea] | None:
+        if value is not None and len(value) != len(set(value)):
+            raise ValueError("Improvement areas must be unique")
         return value
 
 

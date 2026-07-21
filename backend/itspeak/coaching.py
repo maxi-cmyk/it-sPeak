@@ -28,6 +28,7 @@ from .config import compute_progress, get_archetype_config
 from .models import (
     Archetype,
     CoachingCard,
+    ImprovementArea,
     Module,
     NormalizedScores,
     VideoAnalysisResult,
@@ -83,6 +84,11 @@ ARCHETYPE EXPECTATIONS: {archetype_description}
 
 AUDIENCE / CONTEXT (verbatim from the speaker):
 \"\"\"{audience_context}\"\"\"
+
+PROJECT IMPROVEMENT AREAS:
+{improvement_focus}
+Create coaching cards only for the selected face/body modules. Voice coaching
+is handled separately by the audio pipeline.
 
 NORMALIZED DELIVERY SCORES (0-100, calibrated to the archetype above):
   FACE MODULE
@@ -140,6 +146,7 @@ class CoachingService:
         audience_context: str,
         analysis: VideoAnalysisResult | None = None,
         baseline: NormalizedScores | None = None,
+        improvement_areas: list[ImprovementArea] | None = None,
     ) -> list[CoachingCard]:
         """Return validated coaching cards (<= 3 per module).
 
@@ -147,17 +154,20 @@ class CoachingService:
         returns a deterministic rule-based fallback so the pipeline completes.
         """
         system_prompt, user_prompt = self.build_prompt(
-            scores, archetype, audience_context, analysis, baseline
+            scores, archetype, audience_context, analysis, baseline, improvement_areas
         )
+        selected_modules = _selected_visual_modules(improvement_areas)
+        if not selected_modules:
+            return []
         try:
             raw = self._call_llm(system_prompt, user_prompt)
-            cards = self._parse_and_validate(raw)
+            cards = [card for card in self._parse_and_validate(raw) if card.module in selected_modules]
             if cards:
                 return cards
             logger.warning("LLM returned no valid cards; using rule-based fallback.")
         except Exception as exc:  # noqa: BLE001 - degrade gracefully, never crash
             logger.warning("LLM coaching failed (%s); using rule-based fallback.", exc)
-        return self._fallback_cards(scores, archetype)
+        return self._fallback_cards(scores, archetype, improvement_areas)
 
     def build_prompt(
         self,
@@ -166,6 +176,7 @@ class CoachingService:
         audience_context: str,
         analysis: VideoAnalysisResult | None,
         baseline: NormalizedScores | None,
+        improvement_areas: list[ImprovementArea] | None = None,
     ) -> tuple[str, str]:
         """Assemble (system_prompt, user_prompt)."""
         cfg = get_archetype_config(archetype)
@@ -188,6 +199,7 @@ class CoachingService:
             archetype_label=cfg.label,
             archetype_description=cfg.description,
             audience_context=(audience_context.strip() or "(no audience context provided)"),
+            improvement_focus=", ".join(area.value for area in (improvement_areas or list(ImprovementArea))),
             eye_contact_score=scores.eye_contact_score,
             expression_score=scores.expression_score,
             posture_score=scores.posture_score,
@@ -243,7 +255,10 @@ class CoachingService:
 
     # ---- deterministic fallback ---- #
     def _fallback_cards(
-        self, scores: NormalizedScores, archetype: Archetype
+        self,
+        scores: NormalizedScores,
+        archetype: Archetype,
+        improvement_areas: list[ImprovementArea] | None = None,
     ) -> list[CoachingCard]:
         """Rule-based cards used when the LLM is unavailable.
 
@@ -299,11 +314,21 @@ class CoachingService:
             list(scores.available().items()),
             key=lambda kv: kv[1],
         )
+        selected_modules = _selected_visual_modules(improvement_areas)
+        selected_areas = set(improvement_areas or list(ImprovementArea))
+        area_by_metric = {
+            "eye_contact_score": ImprovementArea.EYE_CONTACT,
+            "expression_score": ImprovementArea.FACIAL_EXPRESSION,
+            "posture_score": ImprovementArea.POSTURE,
+            "gesture_score": ImprovementArea.GESTURES,
+        }
         cards: list[CoachingCard] = []
         for metric, value in ranked:
             if value >= 80:
                 continue  # don't nag about already-strong areas
             module, problem, importance, fix = catalogue[metric]
+            if module not in selected_modules or area_by_metric.get(metric) not in selected_areas:
+                continue
             cards.append(
                 CoachingCard(
                     module=module, problem=problem, importance=importance, actionable_fix=fix
@@ -315,6 +340,16 @@ class CoachingService:
 # --------------------------------------------------------------------------- #
 # Helpers
 # --------------------------------------------------------------------------- #
+def _selected_visual_modules(improvement_areas: list[ImprovementArea] | None) -> set[Module]:
+    selected = set(improvement_areas or list(ImprovementArea))
+    modules: set[Module] = set()
+    if selected & {ImprovementArea.EYE_CONTACT, ImprovementArea.FACIAL_EXPRESSION}:
+        modules.add(Module.FACE)
+    if selected & {ImprovementArea.POSTURE, ImprovementArea.GESTURES}:
+        modules.add(Module.BODY)
+    return modules
+
+
 def _extract_json_array(raw: str):
     """Best-effort extraction of a JSON array from an LLM response.
 

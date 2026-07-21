@@ -10,7 +10,7 @@ from .celery_app import celery_app
 from .coaching import CoachingService
 from .config import compute_progress, normalize_scores
 from .media import extract_audio_track
-from .models import AudioAnalysisResult, Archetype, ArtifactLinks, CoachingReport, NormalizedScores, QualityDisposition
+from .models import AudioAnalysisResult, Archetype, ArtifactLinks, CoachingReport, ImprovementArea, ImprovementGuidance, Module, NormalizedScores, QualityDisposition
 from .pipeline import analyze_frames_with_artifacts, extract_frames
 from .persistence import get_persistence
 from .progress import detect_stagnation
@@ -61,6 +61,79 @@ def _aggregates(report: CoachingReport) -> dict[str, float | None]:
     return {"overall_score": _average([face, body, vocal]), "vocal_score": vocal, "face_score": face, "body_score": body}
 
 
+def _apply_improvement_focus(report: CoachingReport, aggregates: dict[str, float | None] | None = None) -> CoachingReport:
+    audio_scores = report.audio.performance_scores
+    score_by_area = {
+        ImprovementArea.PACING: audio_scores.get("pacing_alignment"),
+        ImprovementArea.INTONATION: audio_scores.get("vocal_intonation_variety"),
+        ImprovementArea.FILLER_WORDS: audio_scores.get("word_choice_efficiency"),
+        ImprovementArea.EYE_CONTACT: report.scores.eye_contact_score,
+        ImprovementArea.FACIAL_EXPRESSION: report.scores.expression_score,
+        ImprovementArea.POSTURE: report.scores.posture_score,
+        ImprovementArea.GESTURES: report.scores.gesture_score,
+    }
+    labels = {
+        ImprovementArea.PACING: "Pacing",
+        ImprovementArea.INTONATION: "Vocal variety",
+        ImprovementArea.FILLER_WORDS: "Filler-word control",
+        ImprovementArea.EYE_CONTACT: "Eye contact",
+        ImprovementArea.FACIAL_EXPRESSION: "Facial expression",
+        ImprovementArea.POSTURE: "Posture",
+        ImprovementArea.GESTURES: "Gestures",
+    }
+    selected = list(dict.fromkeys(report.improvement_areas))
+    def needs_work(area: ImprovementArea) -> bool:
+        score = score_by_area.get(area)
+        return score is not None and score <= 80
+
+    ranked = sorted(selected, key=lambda area: score_by_area[area] if score_by_area[area] is not None else 101)
+    guidance: list[ImprovementGuidance] = []
+    for priority, area in enumerate(ranked, start=1):
+        score = score_by_area[area]
+        if score is None:
+            continue
+        proficient = score > 80
+        next_area = next((candidate for candidate in ranked if candidate != area), None)
+        if proficient and next_area:
+            message = f"You are proficient in {labels[area]} at {score:.0f}. Prioritise {labels[next_area]}, your lowest-scoring other selected area."
+        elif proficient:
+            message = f"You are proficient in {labels[area]} at {score:.0f}. Maintain this strength and select another area for your next growth target."
+        else:
+            message = f"Priority {priority}: improve {labels[area]} ({score:.0f}), starting with the lowest-scoring selected area."
+        guidance.append(ImprovementGuidance(area=area, score=score, priority=priority, proficient=proficient, message=message))
+
+    priority_by_area = {item.area: item.priority for item in guidance}
+    areas_by_module = {
+        Module.FACE: {ImprovementArea.EYE_CONTACT, ImprovementArea.FACIAL_EXPRESSION},
+        Module.BODY: {ImprovementArea.POSTURE, ImprovementArea.GESTURES},
+    }
+    priority_by_module = {
+        module: min((priority_by_area[area] for area in areas if area in priority_by_area and needs_work(area)), default=99)
+        for module, areas in areas_by_module.items()
+    }
+    focused_cards = []
+    for card in report.cards:
+        module_areas = areas_by_module.get(card.module, set())
+        if any(area in selected and needs_work(area) for area in module_areas):
+            focused_cards.append(card)
+    report.cards = sorted(
+        focused_cards,
+        key=lambda card: priority_by_module.get(card.module, 99),
+    )
+    audio_actions = {
+        ImprovementArea.PACING: "Rehearse with a metronome-like sentence rhythm, then repeat while keeping key phrases inside your target pace.",
+        ImprovementArea.INTONATION: "Mark one emphasis word per sentence and deliberately vary pitch only on those words.",
+        ImprovementArea.FILLER_WORDS: "Replace each filler word with a silent beat; pause, breathe, then begin the next phrase cleanly.",
+    }
+    report.audio.actionable_coaching_cards = [
+        audio_actions[area]
+        for area in ranked
+        if area in audio_actions and needs_work(area)
+    ]
+    report.improvement_guidance = guidance
+    return report
+
+
 def _durable_cards(report: CoachingReport) -> list[dict]:
     cards = [card.model_dump(mode="json") for card in report.cards]
     cards.extend({"module": "audio", "problem": text, "importance": "This vocal pattern affects the clarity and impact of the rehearsal.", "actionable_fix": "Apply this cue deliberately in the next rehearsal."} for text in report.audio.actionable_coaching_cards)
@@ -76,6 +149,7 @@ def analyze_session_task(self, session_id: str) -> dict:
         update_manifest(session_id, status="processing", stage="Analyzing facial presence and body movement")
         get_persistence().update_session(session_id, {"status": "processing", "stage": "Analyzing facial presence and body movement"})
         archetype = Archetype(manifest["archetype"])
+        improvement_areas = [ImprovementArea(area) for area in manifest.get("improvement_areas", [area.value for area in ImprovementArea])]
         baseline_payload = manifest.get("baseline_scores")
         baseline = NormalizedScores(**baseline_payload) if baseline_payload else None
         visual, landmarks = analyze_frames_with_artifacts(extract_frames(str(video_path(session_id))))
@@ -89,22 +163,25 @@ def analyze_session_task(self, session_id: str) -> dict:
 
         update_manifest(session_id, status="processing", stage="Generating grounded coaching")
         get_persistence().update_session(session_id, {"status": "processing", "stage": "Generating grounded coaching"})
-        cards = CoachingService().generate_cards(scores=scores, archetype=archetype, audience_context=manifest.get("audience_context", ""), analysis=visual, baseline=baseline)
+        cards = CoachingService().generate_cards(scores=scores, archetype=archetype, audience_context=manifest.get("audience_context", ""), analysis=visual, baseline=baseline, improvement_areas=improvement_areas)
         report = CoachingReport(
             archetype=archetype,
             scores=scores,
             raw_analysis=visual,
             audio=audio,
             cards=cards,
+            improvement_areas=improvement_areas,
             progress=compute_progress(scores, baseline),
             stagnation=detect_stagnation(scores, baseline, reference_label="your baseline session"),
             artifacts=ArtifactLinks(video=f"/sessions/{session_id}/video", landmarks=f"/sessions/{session_id}/landmarks"),
         )
+        aggregates = _aggregates(report)
+        report = _apply_improvement_focus(report, aggregates)
         payload = report.model_dump(mode="json")
         persistence = get_persistence()
         paths = persistence.upload_artifacts(session_id, video_path(session_id), landmarks_path(session_id))
         uploaded_paths = list(paths.values())
-        committed = persistence.commit_session(session_id, payload, _durable_cards(report), _aggregates(report))
+        committed = persistence.commit_session(session_id, payload, _durable_cards(report), aggregates)
         update_manifest(session_id, status="success", stage="Analysis complete", report=payload, error=None)
         if committed.get("replaced_session_id"):
             try:

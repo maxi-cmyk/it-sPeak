@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "npm --prefix frontend run dev",
+    "backend": "node scripts/run-backend.mjs",
     "build": "npm --prefix frontend run build",
     "start": "npm --prefix frontend run start",
     "test": "npm --prefix frontend run test",

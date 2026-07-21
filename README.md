@@ -184,8 +184,9 @@ On macOS with Homebrew:
 
 ```bash
 brew install python@3.11 ffmpeg redis
-brew services start redis
 ```
+
+You do not need to start Redis separately during normal development; `npm run backend` starts a local Redis process when one is not already available.
 
 On Windows with winget (PowerShell):
 
@@ -279,9 +280,40 @@ supabase db push
 
 Alternatively, paste `backend/persistence/schema.sql` into the Supabase SQL Editor for a new empty project.
 
-### Run
+### Run the app
 
-Run the API, worker, cleanup scheduler, and frontend in separate terminals from the repository root.
+After completing the install and environment setup above, open two terminals at the repository root.
+
+**Terminal 1 — complete backend**
+
+```bash
+npm run backend
+```
+
+This single command starts and supervises:
+
+- FastAPI on [http://localhost:8000](http://localhost:8000)
+- The Celery analysis worker
+- The Celery cleanup scheduler
+- Redis, when the configured Redis instance is not already running
+
+Wait until the logs show `Application startup complete` and the Celery worker reports `ready`.
+
+**Terminal 2 — web app**
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). Clerk will redirect signed-out users to the sign-in page, and the frontend will call FastAPI at `NEXT_PUBLIC_API_URL`.
+
+To stop the app, press `Ctrl+C` in both terminals. The backend command stops FastAPI, Celery worker, Celery beat, and any Redis process it started. A Redis instance that was already running before the command is intentionally left running.
+
+The individual backend commands below are only needed for service-specific debugging.
+
+### Run backend services individually
+
+Run the API, worker, and cleanup scheduler in separate terminals from the repository root.
 
 **macOS / Linux**
 
@@ -302,11 +334,6 @@ MPLCONFIGDIR=/tmp/itspeak-matplotlib .venv/bin/celery \
 # Terminal 3 - cleanup scheduler
 cd backend
 .venv/bin/celery -A itspeak.celery_app.celery_app beat --loglevel=info
-```
-
-```bash
-# Terminal 4 - frontend (run from the repository root)
-npm run dev
 ```
 
 **Windows (PowerShell)**
@@ -333,13 +360,6 @@ $env:MPLCONFIGDIR = "$env:TEMP\itspeak-matplotlib"
 cd backend
 .\.venv\Scripts\python.exe -m celery -A itspeak.celery_app.celery_app beat --loglevel=info
 ```
-
-```powershell
-# Terminal 4 - frontend (run from the repository root)
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000). The API defaults to [http://localhost:8000](http://localhost:8000).
 
 ## API Surface
 
