@@ -12,6 +12,7 @@ from uuid import uuid4
 
 import httpx
 
+from .models import ImprovementArea
 from .settings import get_settings
 
 
@@ -88,6 +89,7 @@ class InMemoryPersistence:
             row = {
                 "id": project_id, "owner_id": owner_id, "name": payload["name"].strip(),
                 "goal": payload.get("goal"), "default_archetype_key": payload.get("default_archetype_key", "corporate_board"),
+                "improvement_areas": deepcopy(payload.get("improvement_areas", [area.value for area in ImprovementArea])),
                 "default_archetype_version": 1, "deadline": payload.get("deadline"), "pinned": bool(payload.get("pinned", False)),
                 "reset_generation": 1, "next_sequence_number": 1, "baseline_session_id": None,
                 "created_at": now, "updated_at": now,
@@ -244,7 +246,7 @@ class SupabasePersistence:
         return self._decorate_projects(owner_id, rows)
 
     def create_project(self, owner_id: str, payload: dict[str, Any]) -> dict[str, Any]:
-        row = {"owner_id": owner_id, "name": payload["name"].strip(), "goal": payload.get("goal"), "deadline": payload.get("deadline"), "pinned": payload.get("pinned", False), "default_archetype_key": payload.get("default_archetype_key", "corporate_board")}
+        row = {"owner_id": owner_id, "name": payload["name"].strip(), "goal": payload.get("goal"), "deadline": payload.get("deadline"), "pinned": payload.get("pinned", False), "default_archetype_key": payload.get("default_archetype_key", "corporate_board"), "improvement_areas": payload.get("improvement_areas", [area.value for area in ImprovementArea])}
         rows = self._rows("projects", {"select": "*"}, method="POST", json=row, prefer="return=representation")
         return self._decorate_projects(owner_id, rows)[0]
 

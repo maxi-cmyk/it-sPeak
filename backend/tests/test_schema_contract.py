@@ -21,6 +21,7 @@ class SchemaContractTest(unittest.TestCase):
         self.assertIn("prevent_baseline_retirement", sql)
         self.assertIn("commit_analysis_session", sql)
         self.assertIn("session-artifacts", sql)
+        self.assertIn("improvement_areas text[] not null", sql)
 
 
 if __name__ == "__main__":
