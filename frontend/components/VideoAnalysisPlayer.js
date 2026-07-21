@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getLandmarksFromUrl, getSessionArtifacts } from "@/lib/api";
+import useApi from "@/hooks/useApi";
+import { getLandmarksFromUrl } from "@/lib/api";
 import { containViewport, decodePoint, eyeContactIntervals, frameAtTime } from "@/lib/overlayMath.mjs";
 
 const POSE_CONNECTIONS = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
 const STATE_COLORS = { on_camera: "#34d399", away: "#f59e0b", unknown: "#52525b" };
 
 export default function VideoAnalysisPlayer({ sessionId, analysis, qualityGate }) {
+  const { authReady, getSessionArtifacts } = useApi();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
@@ -18,10 +20,11 @@ export default function VideoAnalysisPlayer({ sessionId, analysis, qualityGate }
   const intervals = useMemo(() => eyeContactIntervals(artifact?.frames, artifact?.duration_seconds), [artifact]);
 
   useEffect(() => {
+    if (!authReady) return undefined;
     const controller = new AbortController();
     getSessionArtifacts(sessionId, controller.signal).then((urls) => { setVideoUrl(urls.video || null); return urls.landmarks ? getLandmarksFromUrl(urls.landmarks, controller.signal) : null; }).then((payload) => { if (payload) setArtifact(payload); }).catch((requestError) => { if (requestError.name !== "AbortError") setError(requestError.message); });
     return () => controller.abort();
-  }, [sessionId]);
+  }, [authReady, sessionId]);
 
   useEffect(() => {
     const video = videoRef.current;

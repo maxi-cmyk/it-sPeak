@@ -1,10 +1,11 @@
-"""Authentication boundary ready for a future Clerk JWT verifier."""
+"""Clerk session-token authentication for the FastAPI boundary."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fastapi import Header, HTTPException
+from clerk_backend_api import AuthenticateRequestOptions, authenticate_request
+from fastapi import HTTPException, Request
 
 from .settings import get_settings
 
@@ -16,17 +17,31 @@ class AuthPrincipal:
     avatar_url: str | None = None
 
 
-def get_auth_principal(authorization: str | None = Header(None)) -> AuthPrincipal:
-    """Return the configured development identity.
-
-    Clerk is deliberately behind this dependency boundary. Until its verifier is
-    installed, production requests fail closed instead of trusting an unverified
-    bearer token.
-    """
+def get_auth_principal(request: Request) -> AuthPrincipal:
+    """Verify a Clerk session token and return its stable user identity."""
     settings = get_settings()
-    if settings.environment.lower() == "development" and settings.dev_user_id:
-        return AuthPrincipal(user_id=settings.dev_user_id, display_name="Local developer")
-    raise HTTPException(
-        status_code=503,
-        detail="Authentication is not configured. Install the Clerk AuthPrincipal adapter.",
-    )
+    if not settings.clerk_secret_key:
+        raise HTTPException(status_code=503, detail="Clerk authentication is not configured")
+
+    try:
+        state = authenticate_request(
+            request,
+            AuthenticateRequestOptions(
+                secret_key=settings.clerk_secret_key,
+                jwt_key=settings.clerk_jwt_key or None,
+                authorized_parties=[settings.frontend_origin],
+                accepts_token=["session_token"],
+            ),
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Clerk authentication is temporarily unavailable") from exc
+
+    payload = state.payload or {}
+    user_id = payload.get("sub")
+    if not state.is_signed_in or not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired Clerk session token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return AuthPrincipal(user_id=user_id)

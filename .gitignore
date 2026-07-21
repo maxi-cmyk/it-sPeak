@@ -37,3 +37,10 @@ Thumbs.db
 node_modules/
 .next/
 .claude/
+
+# --- Supabase CLI local link state ---
+supabase/.temp/
+
+# --- Local runtime state ---
+backend/celerybeat-schedule*
+backend/itspeak-sessions/

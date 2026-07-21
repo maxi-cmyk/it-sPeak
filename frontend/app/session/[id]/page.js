@@ -7,7 +7,7 @@ import Navbar from "@/components/Navbar";
 import RatingBar from "@/components/RatingBar";
 import ScoreRing from "@/components/ScoreRing";
 import VideoAnalysisPlayer from "@/components/VideoAnalysisPlayer";
-import { getSessionAnalysis } from "@/lib/api";
+import useApi from "@/hooks/useApi";
 import { formatDate } from "@/lib/data";
 import { reportToSession } from "@/lib/reportAdapter";
 
@@ -16,10 +16,12 @@ const TimelineChart = dynamic(() => import("@/components/TimelineChart"), { ssr:
 
 export default function SessionSummaryPage() {
   const { id } = useParams();
+  const { authReady, getSessionAnalysis } = useApi();
   const [session, setSession] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!authReady) return undefined;
     const controller = new AbortController();
     getSessionAnalysis(id, controller.signal)
       .then((payload) => {
@@ -33,7 +35,7 @@ export default function SessionSummaryPage() {
         if (requestError.name !== "AbortError") setError(requestError.message);
       });
     return () => controller.abort();
-  }, [id]);
+  }, [id, authReady]);
 
   if (!session) {
     return (

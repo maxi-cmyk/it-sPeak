@@ -1,12 +1,12 @@
 """Runtime configuration loaded from environment variables / ``.env``."""
 
 from functools import lru_cache
-from pydantic import model_validator
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="ITSPEAK_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="ITSPEAK_", env_file=".env", extra="ignore", populate_by_name=True)
 
     redis_url: str = "redis://localhost:6379/0"
     sample_fps: float = 5.0
@@ -44,18 +44,19 @@ class Settings(BaseSettings):
     cleanup_interval_seconds: int = 60 * 60
 
     environment: str = "development"
-    dev_user_id: str = "dev_user"
+    clerk_secret_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("ITSPEAK_CLERK_SECRET_KEY", "CLERK_SECRET_KEY"),
+    )
+    clerk_jwt_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("ITSPEAK_CLERK_JWT_KEY", "CLERK_JWT_KEY"),
+    )
     supabase_url: str = ""
     supabase_publishable_key: str = ""
     supabase_secret_key: str = ""
     supabase_storage_bucket: str = "session-artifacts"
     signed_url_ttl_seconds: int = 300
-
-    @model_validator(mode="after")
-    def reject_production_dev_identity(self):
-        if self.environment.lower() == "production" and self.dev_user_id:
-            raise ValueError("ITSPEAK_DEV_USER_ID must be empty in production")
-        return self
 
     @property
     def supabase_configured(self) -> bool:

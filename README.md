@@ -4,7 +4,7 @@ An on-demand, data-driven public-speaking coach for university students preparin
 
 Users upload an English-language presentation video of up to three minutes. it'sPEAK checks whether the recording is suitable for analysis, evaluates vocal delivery, facial presence, and body language, then turns the observable results into concrete coaching actions.
 
-> **Development status:** the multimodal analysis pipeline and local results experience are working. Persistent accounts, production storage, full project history, and most archetypes remain staged behind explicit scaffolds.
+> **Development status:** the multimodal analysis pipeline, Clerk accounts, Supabase-backed project history, and private retained storage are working. Most additional archetypes and progress-comparison features remain staged behind explicit scaffolds.
 
 ## Why it'sPEAK
 
@@ -100,7 +100,7 @@ The gate retains raw measurements alongside configurable thresholds so calibrati
 | Startup Pitch, Academic/Conference, Informal/Team, Job Interview, and Custom archetypes | Scaffolded |
 | Rule-based archetype recommendation quiz | Planned |
 | Project folders and dashboard experience | Frontend prototype |
-| Clerk-ready authentication boundary and Supabase persistence | Implemented; Clerk dashboard setup remains |
+| Clerk session authentication and Supabase persistence | Implemented; live multi-user verification remains |
 | Private Supabase retained video storage | Implemented |
 | Five-session project limit and protected Session 1 baseline | Implemented |
 | Progress deltas, stagnation alerts, Best Session Replay, and Coaching Playbook | Planned |
@@ -123,6 +123,18 @@ flowchart LR
 ```
 
 Uploads remain in an opaque temporary store while quality checks and analysis run. Successful sessions, reports, coaching cards, videos, and landmark artifacts are committed to Supabase; rejected or failed uploads expire without consuming a project session number.
+
+## Authentication
+
+Clerk owns user registration, sign-in, sign-out, sessions, and the hosted OAuth flow. Authentication crosses the frontend/backend boundary as follows:
+
+1. `ClerkProvider` initializes Clerk in the Next.js application. Clerk middleware protects every application route except `/sign-in` and `/sign-up`.
+2. Before each FastAPI request, the frontend calls Clerk's `getToken()` and sends the current short-lived session token as `Authorization: Bearer <token>`.
+3. FastAPI verifies the token with the Clerk Backend SDK, accepts only Clerk session tokens, and checks that the token's authorized party matches `ITSPEAK_FRONTEND_ORIGIN`.
+4. The verified JWT `sub` claim becomes the stable application owner ID used for project, session, and artifact access.
+5. Missing, invalid, or expired sessions receive `401 Unauthorized`. If Clerk is not configured or cannot perform verification, the API fails closed with `503 Service Unavailable`.
+
+The browser never receives the Clerk secret key or the Supabase secret key. The current web client does not query Supabase directly: authenticated application data goes through FastAPI, which applies owner checks before using the backend-only Supabase credentials.
 
 ## Technology
 
@@ -164,6 +176,8 @@ Uploads remain in an opaque temporary store while quality checks and analysis ru
 - Python 3.11
 - FFmpeg and ffprobe
 - Redis
+- A Clerk application
+- A Supabase project
 - An OpenAI API key for live transcription and generated coaching
 
 On macOS with Homebrew:
@@ -197,7 +211,9 @@ macOS / Linux:
 cd backend
 python3.11 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
-cp .env.example .env
+cd ../frontend
+npm ci
+cd ..
 ```
 
 Windows (PowerShell):
@@ -206,15 +222,53 @@ Windows (PowerShell):
 cd backend
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-Copy-Item .env.example .env
+cd ..\frontend
+npm ci
+cd ..
 ```
 
-Set `ITSPEAK_OPENAI_API_KEY` in `backend/.env`. On Windows, also set
-`ITSPEAK_ARTIFACT_DIR` to a Windows path (for example
-`ITSPEAK_ARTIFACT_DIR=C:\Users\<you>\itspeak-sessions`) since the default
-`/tmp/itspeak-sessions` is a Unix path.
+### Environment requirements
 
-macOS / Linux:
+The frontend and backend run as separate processes and do not automatically share environment files. From the repository root, copy both examples and then configure each file:
+
+```bash
+cp frontend/.env.example frontend/.env.local
+cp backend/.env.example backend/.env
+```
+
+Windows (PowerShell):
+
+```powershell
+Copy-Item frontend/.env.example frontend/.env.local
+Copy-Item backend/.env.example backend/.env
+```
+
+`frontend/.env.local`:
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_API_URL` | Recommended | FastAPI base URL; defaults to `http://localhost:8000` |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Yes | Public Clerk application key used by the browser |
+| `CLERK_SECRET_KEY` | Yes | Server-only Clerk key used by Next.js middleware; it is not exposed because it has no `NEXT_PUBLIC_` prefix |
+
+`backend/.env`:
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `ITSPEAK_FRONTEND_ORIGIN` | Yes | Exact allowed web origin, such as `http://localhost:3000` |
+| `CLERK_SECRET_KEY` | Yes | Verifies Clerk session tokens in FastAPI; use the same Clerk instance as the frontend publishable key |
+| `CLERK_JWT_KEY` | No | PEM public key for local JWT verification; otherwise the Clerk SDK retrieves and caches the instance JWKS |
+| `ITSPEAK_SUPABASE_URL` | Yes | Supabase project URL |
+| `ITSPEAK_SUPABASE_SECRET_KEY` | Yes | Backend-only database and Storage credential |
+| `ITSPEAK_SUPABASE_STORAGE_BUCKET` | No | Private artifact bucket; defaults to `session-artifacts` |
+| `ITSPEAK_REDIS_URL` | Yes | Redis connection used by Celery |
+| `ITSPEAK_OPENAI_API_KEY` | For live AI features | Enables live transcription and generated coaching |
+
+FastAPI also accepts `ITSPEAK_CLERK_SECRET_KEY` and `ITSPEAK_CLERK_JWT_KEY` as prefixed aliases. Never use `NEXT_PUBLIC_` for a Clerk or Supabase secret. The `NEXT_PUBLIC_SUPABASE_*` placeholders are not required by the current web flow because Supabase access is server-owned.
+
+On Windows, set `ITSPEAK_ARTIFACT_DIR` in `backend/.env` to a Windows path (for example `ITSPEAK_ARTIFACT_DIR=C:\Users\<you>\itspeak-sessions`) since the default `/tmp/itspeak-sessions` is a Unix path.
+
+### Supabase setup
 
 Create or link a Supabase project, then apply the migration:
 
@@ -223,23 +277,7 @@ supabase link --project-ref YOUR_PROJECT_REF
 supabase db push
 ```
 
-Alternatively, paste `backend/persistence/schema.sql` into the Supabase SQL Editor for a new empty project. Set `ITSPEAK_SUPABASE_URL` and the backend-only `ITSPEAK_SUPABASE_SECRET_KEY`. Never place the secret key in a `NEXT_PUBLIC_*` variable.
-
-Local development uses `ITSPEAK_DEV_USER_ID`. Before production, clear that value and implement the Clerk verifier behind `itspeak.auth.get_auth_principal`; the schema already expects the Clerk JWT `sub` claim and `supabase/config.toml` contains the deferred third-party-provider hook.
-
-```bash
-cd ../frontend
-npm ci
-cp .env.example .env.local
-```
-
-Windows (PowerShell):
-
-```powershell
-cd ..\frontend
-npm ci
-Copy-Item .env.example .env.local
-```
+Alternatively, paste `backend/persistence/schema.sql` into the Supabase SQL Editor for a new empty project.
 
 ### Run
 

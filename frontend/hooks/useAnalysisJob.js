@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { confirmSession, getSessionAnalysis, uploadSession } from "@/lib/api";
+import useApi from "@/hooks/useApi";
 
 const INITIAL_STATE = { sessionId: null, status: "idle", stage: null, error: null, result: null, qualityGate: null, replacement: null };
 
 export default function useAnalysisJob() {
+  const { confirmSession, getSessionAnalysis, uploadSession } = useApi();
   const [job, setJob] = useState(INITIAL_STATE);
   const controllerRef = useRef(null);
 
@@ -22,7 +23,7 @@ export default function useAnalysisJob() {
     } catch (error) {
       if (error.name !== "AbortError") setJob({ ...INITIAL_STATE, status: error.code === "replacement_required" ? "replacement_required" : "failure", error: error.message, replacement: error.code === "replacement_required" ? { candidates: error.candidates, file, projectId, archetype, audienceContext } : null });
     }
-  }, []);
+  }, [uploadSession]);
 
   useEffect(() => {
     if (!job.sessionId || ["success", "failure", "rejected", "needs_confirmation"].includes(job.status)) return;
@@ -46,7 +47,7 @@ export default function useAnalysisJob() {
     };
     poll();
     return () => { active = false; controller.abort(); window.clearTimeout(timeoutId); };
-  }, [job.sessionId, job.status]);
+  }, [getSessionAnalysis, job.sessionId, job.status]);
 
   const confirm = useCallback(async () => {
     setJob((current) => ({ ...current, status: "queued", stage: "Waiting for full analysis" }));
@@ -56,7 +57,7 @@ export default function useAnalysisJob() {
     } catch (error) {
       setJob((current) => ({ ...current, status: "failure", error: error.message }));
     }
-  }, [job.sessionId]);
+  }, [confirmSession, job.sessionId]);
 
   const chooseReplacement = useCallback((replaceSessionId) => {
     if (!job.replacement) return;

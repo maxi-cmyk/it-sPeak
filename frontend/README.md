@@ -18,6 +18,6 @@ The persisted project and session flow is implemented in three layers:
 - Components and pages render loading/error/empty states, five-session replacement,
   quality decisions, progress, and durable reports.
 
-Until Clerk is connected, the backend supplies the explicit development owner
-configured by `ITSPEAK_DEV_USER_ID`; the browser never receives the Supabase
-secret key.
+The frontend obtains a short-lived Clerk session token for every FastAPI request.
+FastAPI verifies that token and uses its `sub` claim as the Supabase owner ID;
+the browser never receives the Supabase secret key.

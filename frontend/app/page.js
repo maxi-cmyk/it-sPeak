@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import ProjectCard from "@/components/ProjectCard";
 import AddProjectModal from "@/components/AddProjectModal";
-import { createProject, deleteProject, listProjects, updateProject } from "@/lib/api";
+import useApi from "@/hooks/useApi";
 import { projectFromApi } from "@/lib/data";
 
 export default function Dashboard() {
+  const { authReady, createProject, deleteProject, listProjects, updateProject } = useApi();
   const [projects, setProjects] = useState([]);
   const [modal, setModal] = useState(null);
   const [state, setState] = useState({ loading: true, error: null });
@@ -17,7 +18,7 @@ export default function Dashboard() {
     try { setProjects((await listProjects()).map(projectFromApi)); setState({ loading: false, error: null }); }
     catch (error) { setState({ loading: false, error: error.message }); }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (authReady) load(); }, [authReady]);
 
   const handleAdd = async (form) => {
     try { await createProject({ name: form.name, goal: form.description || null, deadline: form.deadline || null }); setModal(null); await load(); }

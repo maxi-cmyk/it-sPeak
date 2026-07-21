@@ -10,14 +10,15 @@ import AllSessionsModal from "@/components/AllSessionsModal";
 import AddSessionModal from "@/components/AddSessionModal";
 import ProcessingModal from "@/components/ProcessingModal";
 import useAnalysisJob from "@/hooks/useAnalysisJob";
-import { getProject, listProjectSessions } from "@/lib/api";
+import useApi from "@/hooks/useApi";
 import { formatDate, getDaysUntilDeadline, projectFromApi, sessionFromApi } from "@/lib/data";
 
 export default function ProjectPage() {
   const { id } = useParams(); const router = useRouter(); const analysisJob = useAnalysisJob();
+  const { authReady, getProject, listProjectSessions } = useApi();
   const [modal, setModal] = useState(null); const [project, setProject] = useState(null); const [sessions, setSessions] = useState([]); const [error, setError] = useState(null);
   const load = async () => { try { const [projectRow, sessionRows] = await Promise.all([getProject(id), listProjectSessions(id)]); setProject(projectFromApi(projectRow)); setSessions(sessionRows.map(sessionFromApi).filter(Boolean)); setError(null); } catch (requestError) { setError(requestError.message); } };
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => { if (authReady) load(); }, [id, authReady]);
   useEffect(() => { if (analysisJob.status === "replacement_required") setModal("processing"); }, [analysisJob.status]);
   const latest = sessions[0] || null; const days = project ? getDaysUntilDeadline(project.deadline) : null;
   const handleSessionUpload = (file) => { setModal("processing"); analysisJob.start({ file, projectId: id, archetype: project?.default_archetype_key || "corporate_board", audienceContext: project?.description || "" }); };
