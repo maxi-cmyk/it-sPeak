@@ -80,6 +80,7 @@ class ArchetypeScoringTest(unittest.TestCase):
         payload = normalize_scores(_rich_result(), Archetype.CORPORATE_BOARD).model_dump(mode="json")
         self.assertEqual(set(payload), CORE_KEYS | OPTIONAL_KEYS | {"archetype"})
         self.assertEqual(payload["archetype"], "corporate_board")
+        self.assertIsNone(payload["smile_naturalness_score"])
         for key in CORE_KEYS:
             self.assertIsInstance(payload[key], (int, float))
             self.assertGreaterEqual(payload[key], 0.0)
@@ -92,6 +93,19 @@ class ArchetypeScoringTest(unittest.TestCase):
         # Keynote rewards wide expression and large gestures; Corporate penalises them.
         self.assertGreater(keyn.expression_score, corp.expression_score)
         self.assertGreater(keyn.gesture_score, corp.gesture_score)
+
+    def test_modest_expression_variation_no_longer_collapses_to_zero(self):
+        result = VideoAnalysisResult(
+            face=FaceMetrics(expression_variance=0.058, frames_with_face=100),
+            body=BodyMetrics(),
+            frames_analyzed=100,
+            sample_fps=5.0,
+            duration_seconds=20.0,
+        )
+        corporate = normalize_scores(result, Archetype.CORPORATE_BOARD)
+        keynote = normalize_scores(result, Archetype.MOTIVATIONAL_KEYNOTE)
+        self.assertGreater(corporate.expression_score, 40)
+        self.assertLess(keynote.expression_score, corporate.expression_score)
 
     def test_all_archetypes_produce_valid_bounded_scores(self):
         rich = _rich_result()

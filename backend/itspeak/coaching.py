@@ -94,7 +94,6 @@ NORMALIZED DELIVERY SCORES (0-100, calibrated to the archetype above):
   FACE MODULE
     - eye_contact_score : {eye_contact_score}
     - expression_score  : {expression_score}
-    - smile_naturalness_proxy_score : {smile_naturalness_score}
   BODY MODULE
     - posture_score     : {posture_score}
     - gesture_score     : {gesture_score}
@@ -204,7 +203,6 @@ class CoachingService:
             expression_score=scores.expression_score,
             posture_score=scores.posture_score,
             gesture_score=scores.gesture_score,
-            smile_naturalness_score=scores.smile_naturalness_score if scores.smile_naturalness_score is not None else "insufficient_data",
             movement_purposefulness_score=scores.movement_purposefulness_score if scores.movement_purposefulness_score is not None else "insufficient_data",
             spatial_use_score=scores.spatial_use_score if scores.spatial_use_score is not None else "insufficient_data",
             progress_block=progress_block,
@@ -291,12 +289,6 @@ class CoachingService:
                 f"For a {cfg.label} audience, mismatched gesturing distracts from your words instead of reinforcing them.",
                 "Define a 'gesture box' at chest height and rehearse landing 2-3 deliberate gestures per point, returning hands to a neutral rest between them.",
             ),
-            "smile_naturalness_score": (
-                Module.FACE,
-                "Smile geometry is not consistently supported by both mouth-corner lift and cheek/eye contraction.",
-                f"In a {cfg.label} setting, a coordinated expression helps emphasis feel visually coherent.",
-                "Rehearse one key line with a relaxed smile: let the cheeks lift before the mouth corners, then return fully to neutral.",
-            ),
             "movement_purposefulness_score": (
                 Module.BODY,
                 "Observable torso movement lacks a clear settle-and-translate pattern.",
@@ -311,7 +303,11 @@ class CoachingService:
             ),
         }
         ranked = sorted(
-            list(scores.available().items()),
+            (
+                (metric, value)
+                for metric, value in scores.available().items()
+                if metric in catalogue
+            ),
             key=lambda kv: kv[1],
         )
         selected_modules = _selected_visual_modules(improvement_areas)

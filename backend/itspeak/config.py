@@ -122,7 +122,7 @@ ARCHETYPE_PRESETS: dict[Archetype, ArchetypeConfig] = {
         # Expects very high eye contact.
         eye_contact=FloorBand(low=0.35, ideal=0.80),
         # Controlled but not frozen expression.
-        expression=TargetBand(ideal=0.35, tol_low=0.30, tol_high=0.45),
+        expression=TargetBand(ideal=0.12, tol_low=0.12, tol_high=0.35),
         posture=FloorBand(low=0.45, ideal=0.90),
         # Minimal, deliberate gestures — a low ideal, punished if busy.
         gesture_frequency=TargetBand(ideal=0.25, tol_low=0.25, tol_high=0.45),
@@ -150,7 +150,7 @@ ARCHETYPE_PRESETS: dict[Archetype, ArchetypeConfig] = {
         # Eye contact still matters but sweeping the room is fine.
         eye_contact=FloorBand(low=0.25, ideal=0.65),
         # Wants high expressiveness.
-        expression=FloorBand(low=0.25, ideal=0.80),
+        expression=FloorBand(low=0.03, ideal=0.25),
         posture=FloorBand(low=0.40, ideal=0.85),
         # Rewards frequent, large gestures.
         gesture_frequency=TargetBand(ideal=0.70, tol_low=0.55, tol_high=0.50),
@@ -179,7 +179,7 @@ ARCHETYPE_PRESETS: dict[Archetype, ArchetypeConfig] = {
             "nervous and undercuts credibility."
         ),
         eye_contact=FloorBand(low=0.30, ideal=0.72),
-        expression=FloorBand(low=0.25, ideal=0.65),
+        expression=FloorBand(low=0.03, ideal=0.20),
         posture=FloorBand(low=0.45, ideal=0.88),
         gesture_frequency=TargetBand(ideal=0.50, tol_low=0.40, tol_high=0.45),
         gesture_range=TargetBand(ideal=0.50, tol_low=0.40, tol_high=0.45),
@@ -207,7 +207,7 @@ ARCHETYPE_PRESETS: dict[Archetype, ArchetypeConfig] = {
             "from the substance."
         ),
         eye_contact=FloorBand(low=0.25, ideal=0.60),
-        expression=TargetBand(ideal=0.40, tol_low=0.35, tol_high=0.45),
+        expression=TargetBand(ideal=0.14, tol_low=0.14, tol_high=0.40),
         posture=FloorBand(low=0.45, ideal=0.88),
         gesture_frequency=TargetBand(ideal=0.35, tol_low=0.30, tol_high=0.45),
         gesture_range=TargetBand(ideal=0.30, tol_low=0.28, tol_high=0.42),
@@ -234,7 +234,7 @@ ARCHETYPE_PRESETS: dict[Archetype, ArchetypeConfig] = {
             "over-controlled behaviour reads as tense rather than collaborative."
         ),
         eye_contact=FloorBand(low=0.20, ideal=0.55),
-        expression=FloorBand(low=0.25, ideal=0.70),
+        expression=FloorBand(low=0.03, ideal=0.22),
         posture=FloorBand(low=0.35, ideal=0.78),
         gesture_frequency=TargetBand(ideal=0.50, tol_low=0.45, tol_high=0.55),
         gesture_range=TargetBand(ideal=0.50, tol_low=0.45, tol_high=0.55),
@@ -261,7 +261,7 @@ ARCHETYPE_PRESETS: dict[Archetype, ArchetypeConfig] = {
             "Fidgeting, slumping or large sweeping gestures undermine composure."
         ),
         eye_contact=FloorBand(low=0.35, ideal=0.78),
-        expression=TargetBand(ideal=0.45, tol_low=0.35, tol_high=0.45),
+        expression=TargetBand(ideal=0.12, tol_low=0.12, tol_high=0.35),
         posture=FloorBand(low=0.50, ideal=0.90),
         gesture_frequency=TargetBand(ideal=0.30, tol_low=0.28, tol_high=0.42),
         gesture_range=TargetBand(ideal=0.25, tol_low=0.25, tol_high=0.40),
@@ -323,7 +323,9 @@ def normalize_scores(
         expression_score=round(_clamp(expression_score), 1),
         posture_score=round(_clamp(posture_score), 1),
         gesture_score=round(_clamp(gesture_score), 1),
-        smile_naturalness_score=(round(cfg.smile_naturalness.score(face.smile_naturalness_proxy), 1) if face.smile_naturalness_proxy is not None else None),
+        # Retain the optional contract field for older reports, but smile
+        # naturalness is a diagnostic proxy rather than a judged score.
+        smile_naturalness_score=None,
         movement_purposefulness_score=(round(cfg.movement_purposefulness.score(body.movement_purposefulness), 1) if body.movement_purposefulness is not None else None),
         spatial_use_score=(round(cfg.spatial_use.score(body.spatial_use), 1) if body.spatial_use is not None else None),
         archetype=archetype,

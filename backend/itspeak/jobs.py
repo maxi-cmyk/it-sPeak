@@ -54,7 +54,7 @@ def _average(values: list[float | None]) -> float | None:
 
 
 def _aggregates(report: CoachingReport) -> dict[str, float | None]:
-    face = _average([report.scores.eye_contact_score, report.scores.expression_score, report.scores.smile_naturalness_score])
+    face = _average([report.scores.eye_contact_score, report.scores.expression_score])
     body = _average([report.scores.posture_score, report.scores.gesture_score, report.scores.movement_purposefulness_score, report.scores.spatial_use_score])
     vocal_raw = report.audio.performance_scores.get("aggregate_vocal_rating")
     vocal = round(float(vocal_raw), 2) if vocal_raw is not None else None

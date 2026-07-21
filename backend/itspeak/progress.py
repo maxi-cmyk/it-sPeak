@@ -22,7 +22,6 @@ METRIC_LABELS: dict[str, str] = {
     "expression_score": "facial expression",
     "posture_score": "posture",
     "gesture_score": "gestures",
-    "smile_naturalness_score": "smile naturalness",
     "movement_purposefulness_score": "purposeful movement",
     "spatial_use_score": "use of the space",
 }
@@ -81,6 +80,8 @@ def detect_stagnation(
 
     signals: list[StagnationSignal] = []
     for metric, value in current.available().items():
+        if metric == "smile_naturalness_score":
+            continue
         if metric not in reference_values:
             continue
         delta = round(value - reference_values[metric], 1)

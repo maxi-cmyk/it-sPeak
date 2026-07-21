@@ -8,6 +8,7 @@ test("selected improvement feedback is ranked lowest first and suppresses profic
     scores: {
       eye_contact_score: 85,
       expression_score: 85,
+      smile_naturalness_score: 0,
       posture_score: 70,
       gesture_score: 70,
     },
@@ -29,4 +30,6 @@ test("selected improvement feedback is ranked lowest first and suppresses profic
   assert.match(session.improvementGuidance[2].message, /Prioritise Pacing/);
   assert.deepEqual(session.feedback.map((item) => item.module), ["audio", "body"]);
   assert.equal(session.feedback.some((item) => item.text === "Face advice"), false);
+  assert.equal(session.face, 85);
+  assert.equal(session.radarData.some((item) => item.subject === "Smile proxy"), false);
 });

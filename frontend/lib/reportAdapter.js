@@ -29,7 +29,7 @@ function buildImprovementGuidance(report, scores) {
 }
 
 export function reportToSession(report, sessionId, projectId = "1", qualityGate = null) {
-  const face = averageAvailable(report.scores.eye_contact_score, report.scores.expression_score, report.scores.smile_naturalness_score);
+  const face = averageAvailable(report.scores.eye_contact_score, report.scores.expression_score);
   const body = averageAvailable(report.scores.posture_score, report.scores.gesture_score, report.scores.movement_purposefulness_score, report.scores.spatial_use_score);
   const tone = Math.round(report.audio.performance_scores.aggregate_vocal_rating);
   const pillars = [face, body, tone].filter(Number.isFinite);
@@ -56,7 +56,7 @@ export function reportToSession(report, sessionId, projectId = "1", qualityGate 
     .slice(0, 6);
   const scoreEntries = [
     ["Eye contact", report.scores.eye_contact_score], ["Expression", report.scores.expression_score],
-    ["Smile proxy", report.scores.smile_naturalness_score], ["Posture", report.scores.posture_score],
+    ["Posture", report.scores.posture_score],
     ["Gesture", report.scores.gesture_score], ["Movement", report.scores.movement_purposefulness_score],
     ["Spatial use", report.scores.spatial_use_score], ["Voice", tone],
   ].filter(([, score]) => Number.isFinite(score));
