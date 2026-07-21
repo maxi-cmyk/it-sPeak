@@ -38,6 +38,16 @@ class PersistenceFoundationTest(unittest.TestCase):
         self.assertTrue(committed["baseline"])
         self.assertEqual(project["baseline_session_id"], committed["session_id"])
 
+    def test_update_transcript_rewrites_stored_report(self):
+        committed = self.commit()
+        session = self.repo.update_transcript("clerk-user-a", committed["session_id"], "Corrected transcript text.")
+        self.assertEqual(session["analysis_result"]["report"]["audio"]["transcript"]["text"], "Corrected transcript text.")
+
+    def test_update_transcript_rejects_other_owners(self):
+        committed = self.commit()
+        with self.assertRaises(Exception):
+            self.repo.update_transcript("clerk-user-b", committed["session_id"], "Hijacked transcript.")
+
     def test_sixth_session_requires_non_baseline_replacement(self):
         committed = [self.commit() for _ in range(5)]
         with self.assertRaises(ReplacementRequired) as context:

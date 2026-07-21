@@ -6,7 +6,8 @@ export default function RatingBar({ label, value, target }) {
         <span className="text-zinc-400">{label}</span>
         <div className="flex items-center gap-2">
           <span className="font-semibold text-zinc-50">{value}</span>
-          {target && <span className="text-zinc-600 text-xs">/ {target}</span>}
+          <span className="text-zinc-600 text-xs">/ 100</span>
+          {target && <span className="text-zinc-600 text-[10px]">(target {target})</span>}
         </div>
       </div>
       <div className="relative h-2 bg-zinc-800 rounded-full overflow-hidden">

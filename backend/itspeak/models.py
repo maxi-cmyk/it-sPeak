@@ -307,6 +307,10 @@ class ProjectUpdate(BaseModel):
         return value
 
 
+class TranscriptUpdate(BaseModel):
+    transcript: str = Field(min_length=1, max_length=20000)
+
+
 # Kept as aliases for code importing the earlier contract names.
 AnalyzeAccepted = SessionAccepted
 JobStatus = SessionStatus

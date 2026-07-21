@@ -15,7 +15,7 @@ from .archetypes import list_archetypes
 from .auth import AuthPrincipal, get_auth_principal
 from .artifact_store import authorize, create_session, landmarks_path, read_manifest, session_dir, update_manifest, video_path
 from .jobs import _enqueue_analysis, quality_check_task
-from .models import Archetype, CoachingReport, ImprovementArea, ProjectCreate, ProjectUpdate, QualityGateReport, SessionAccepted, SessionStatus
+from .models import Archetype, CoachingReport, ImprovementArea, ProjectCreate, ProjectUpdate, QualityGateReport, SessionAccepted, SessionStatus, TranscriptUpdate
 from .persistence import NotFoundError, PersistenceError, ReplacementRequired, get_persistence
 from .settings import get_settings
 from .uploads import save_session_video
@@ -131,6 +131,15 @@ def confirm_session(session_id: str, principal: AuthPrincipal = Depends(get_auth
     if manifest["status"] != "needs_confirmation":
         raise HTTPException(status_code=409, detail="This session is not waiting for confirmation")
     _enqueue_analysis(session_id)
+    return get_session(session_id, principal)
+
+
+@app.patch("/sessions/{session_id}/transcript", response_model=SessionStatus)
+def update_transcript(session_id: str, payload: TranscriptUpdate, principal: AuthPrincipal = Depends(get_auth_principal)) -> SessionStatus:
+    try:
+        get_persistence().update_transcript(principal.user_id, session_id, payload.transcript)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return get_session(session_id, principal)
 
 

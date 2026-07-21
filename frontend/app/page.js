@@ -21,11 +21,11 @@ export default function Dashboard() {
   useEffect(() => { if (authReady) load(); }, [authReady]);
 
   const handleAdd = async (form) => {
-    try { await createProject({ name: form.name, goal: form.description || null, deadline: form.deadline || null, improvement_areas: form.improvementAreas }); setModal(null); await load(); }
+    try { await createProject({ name: form.name, goal: form.description || null, deadline: form.deadline || null, improvement_areas: form.improvementAreas, default_archetype_key: form.archetype }); setModal(null); await load(); }
     catch (error) { setState({ loading: false, error: error.message }); }
   };
   const handleEdit = async (id, form) => {
-    try { await updateProject(id, { name: form.name, goal: form.description || null, deadline: form.deadline || null, improvement_areas: form.improvementAreas }); setModal(null); await load(); }
+    try { await updateProject(id, { name: form.name, goal: form.description || null, deadline: form.deadline || null, improvement_areas: form.improvementAreas, default_archetype_key: form.archetype }); setModal(null); await load(); }
     catch (error) { setState({ loading: false, error: error.message }); }
   };
   const handlePin = async (project) => { await updateProject(project.id, { pinned: !project.pinned }); await load(); };

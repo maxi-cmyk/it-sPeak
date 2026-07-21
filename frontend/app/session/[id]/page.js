@@ -12,13 +12,24 @@ import { formatDate } from "@/lib/data";
 import { reportToSession } from "@/lib/reportAdapter";
 
 const SkillRadar = dynamic(() => import("@/components/SkillRadar"), { ssr: false });
-const TimelineChart = dynamic(() => import("@/components/TimelineChart"), { ssr: false });
 
 export default function SessionSummaryPage() {
   const { id } = useParams();
-  const { authReady, getSessionAnalysis } = useApi();
+  const { authReady, getSessionAnalysis, updateTranscript } = useApi();
   const [session, setSession] = useState(null);
   const [error, setError] = useState(null);
+  const [editingTranscript, setEditingTranscript] = useState(false);
+  const [transcriptDraft, setTranscriptDraft] = useState("");
+  const [savingTranscript, setSavingTranscript] = useState(false);
+
+  const startEditingTranscript = () => { setTranscriptDraft(session.transcript); setEditingTranscript(true); };
+  const cancelEditingTranscript = () => setEditingTranscript(false);
+  const saveTranscript = async () => {
+    setSavingTranscript(true);
+    try { await updateTranscript(id, transcriptDraft); setSession((current) => ({ ...current, transcript: transcriptDraft })); setEditingTranscript(false); }
+    catch (requestError) { setError(requestError.message); }
+    finally { setSavingTranscript(false); }
+  };
 
   useEffect(() => {
     if (!authReady) return undefined;
@@ -70,16 +81,37 @@ export default function SessionSummaryPage() {
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-violet-400">Your selected focus</p>
             <h2 className="mt-1 text-base font-semibold text-zinc-100">Lowest score leads the next rehearsal</h2>
           </div>
-          <div className="grid gap-px bg-zinc-800 sm:grid-flow-col sm:auto-cols-fr">
-            {session.improvementGuidance.map((item) => (
-              <div key={item.area} className="bg-zinc-900 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">Priority {item.priority}</span>
-                  <span className={`text-lg font-semibold ${item.proficient ? "text-emerald-400" : item.priority === 1 ? "text-amber-300" : "text-zinc-200"}`}>{Math.round(item.score)}</span>
-                </div>
-                <p className={`mt-3 text-sm leading-6 ${item.proficient ? "text-emerald-200" : "text-zinc-300"}`}>{item.message}</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-zinc-800">
+            <div className="bg-zinc-900 p-4">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-amber-300">Needs improvement</p>
+              <div className="flex flex-col gap-4">
+                {session.improvementGuidance.filter((item) => !item.proficient).length === 0 && <p className="text-sm text-zinc-500">Nothing below the coaching threshold right now.</p>}
+                {session.improvementGuidance.filter((item) => !item.proficient).map((item) => (
+                  <div key={item.area}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">Priority {item.priority}</span>
+                      <span className={`text-lg font-semibold ${item.priority === 1 ? "text-amber-300" : "text-zinc-200"}`}>{Math.round(item.score)}</span>
+                    </div>
+                    <p className="mt-1 text-sm leading-6 text-zinc-300">{item.message}</p>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+            <div className="bg-zinc-900 p-4">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-emerald-400">Done well</p>
+              <div className="flex flex-col gap-4">
+                {session.improvementGuidance.filter((item) => item.proficient).length === 0 && <p className="text-sm text-zinc-500">No areas above the coaching threshold yet.</p>}
+                {session.improvementGuidance.filter((item) => item.proficient).map((item) => (
+                  <div key={item.area}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">Priority {item.priority}</span>
+                      <span className="text-lg font-semibold text-emerald-400">{Math.round(item.score)}</span>
+                    </div>
+                    <p className="mt-1 text-sm leading-6 text-emerald-200">{item.message}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -124,21 +156,39 @@ export default function SessionSummaryPage() {
 
         {session.transcript && (
           <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-6">
-            <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">Transcript</h2>
-            <p className="text-sm leading-7 text-zinc-300">{session.transcript}</p>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Transcript</h2>
+              {!editingTranscript && (
+                <button onClick={startEditingTranscript} aria-label="Edit transcript" className="text-zinc-500 hover:text-violet-300 transition-colors">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            {editingTranscript ? (
+              <div className="flex flex-col gap-3">
+                <textarea
+                  rows={6}
+                  value={transcriptDraft}
+                  onChange={(e) => setTranscriptDraft(e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm leading-7 text-zinc-100 focus:outline-none focus:border-violet-500 transition-colors resize-y"
+                />
+                <div className="flex gap-3">
+                  <button onClick={cancelEditingTranscript} disabled={savingTranscript} className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200 hover:border-zinc-600 transition-colors disabled:opacity-50">Cancel</button>
+                  <button onClick={saveTranscript} disabled={savingTranscript || !transcriptDraft.trim()} className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 transition-colors disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500">{savingTranscript ? "Saving…" : "Save"}</button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm leading-7 text-zinc-300">{session.transcript}</p>
+            )}
           </section>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-            <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Pillar snapshot</h2>
-            <TimelineChart data={session.timelineData} />
-          </section>
-          <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-            <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Skill breakdown</h2>
-            <SkillRadar data={session.radarData} />
-          </section>
-        </div>
+        <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+          <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Skill breakdown</h2>
+          <SkillRadar data={session.radarData} />
+        </section>
       </main>
     </div>
   );

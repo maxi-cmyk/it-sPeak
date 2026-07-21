@@ -14,7 +14,6 @@ const LINES = [
   { key: "Facial", color: "#a78bfa" },
   { key: "Tone", color: "#2dd4bf" },
   { key: "Body", color: "#fb923c" },
-  { key: "Pace", color: "#4ade80" },
 ];
 
 export default function TimelineChart({ data }) {

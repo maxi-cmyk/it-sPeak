@@ -48,6 +48,7 @@ class Persistence(Protocol):
     def update_session(self, session_id: str, payload: dict[str, Any]) -> None: ...
     def upload_artifacts(self, session_id: str, video: Path, landmarks: Path) -> dict[str, str]: ...
     def commit_session(self, session_id: str, report: dict[str, Any], cards: list[dict[str, Any]], aggregates: dict[str, float | None]) -> dict[str, Any]: ...
+    def update_transcript(self, owner_id: str, session_id: str, transcript: str) -> dict[str, Any]: ...
     def signed_artifacts(self, owner_id: str, session_id: str) -> dict[str, str]: ...
     def delete_objects(self, paths: list[str]) -> None: ...
     def retry_pending_cleanup(self) -> int: ...
@@ -200,6 +201,15 @@ class InMemoryPersistence:
             if baseline: project["baseline_session_id"] = session_id
             return {"session_id": session_id, "sequence_number": sequence, "baseline": baseline, "replaced_session_id": replacement and replacement["id"], "old_video_object_path": replacement and replacement.get("video_object_path"), "old_landmarks_object_path": replacement and replacement.get("landmarks_object_path")}
 
+    def update_transcript(self, owner_id: str, session_id: str, transcript: str) -> dict[str, Any]:
+        with self._lock:
+            session = self.sessions.get(session_id)
+            result = self.results.get(session_id)
+            if not session or session["owner_id"] != owner_id or not result:
+                raise NotFoundError("Session not found")
+            result["report"].setdefault("audio", {}).setdefault("transcript", {})["text"] = transcript
+            return self._session_view(session)
+
     def signed_artifacts(self, owner_id: str, session_id: str) -> dict[str, str]:
         session = self.get_session(owner_id, session_id)
         if not session or session["status"] != "success": raise NotFoundError("Session not found")
@@ -311,6 +321,16 @@ class SupabasePersistence:
 
     def commit_session(self, session_id: str, report: dict[str, Any], cards: list[dict[str, Any]], aggregates: dict[str, float | None]) -> dict[str, Any]:
         return self._request("POST", "/rest/v1/rpc/commit_analysis_session", json={"p_session_id": session_id, "p_report": report, "p_cards": cards, "p_overall_score": aggregates.get("overall_score"), "p_vocal_score": aggregates.get("vocal_score"), "p_face_score": aggregates.get("face_score"), "p_body_score": aggregates.get("body_score")})
+
+    def update_transcript(self, owner_id: str, session_id: str, transcript: str) -> dict[str, Any]:
+        rows = self._rows("analysis_results", {"select": "report", "session_id": f"eq.{session_id}", "owner_id": f"eq.{owner_id}", "limit": "1"})
+        if not rows: raise NotFoundError("Session not found")
+        report = rows[0]["report"]
+        report.setdefault("audio", {}).setdefault("transcript", {})["text"] = transcript
+        self._rows("analysis_results", {"session_id": f"eq.{session_id}", "owner_id": f"eq.{owner_id}"}, method="PATCH", json={"report": report})
+        session = self.get_session(owner_id, session_id)
+        if not session: raise NotFoundError("Session not found")
+        return session
 
     def signed_artifacts(self, owner_id: str, session_id: str) -> dict[str, str]:
         session = self.get_session(owner_id, session_id)

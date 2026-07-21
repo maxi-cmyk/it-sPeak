@@ -67,6 +67,5 @@ export function reportToSession(report, sessionId, projectId = "1", qualityGate 
     transcript: report.audio.transcript.text, audioMetrics: report.audio.readable_metrics,
     warnings: report.raw_analysis.warnings, rawAnalysis: report.raw_analysis, qualityGate, report,
     radarData: scoreEntries.map(([subject, score]) => ({ subject, score, fullMark: 100 })),
-    timelineData: [{ session: "Current", Facial: face ?? 0, Tone: tone, Body: body ?? 0 }],
   };
 }

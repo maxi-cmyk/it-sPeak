@@ -54,6 +54,8 @@ export function createApiClient(getToken) {
     getSessionAnalysis: (sessionId, signal) => request(`/sessions/${sessionId}`, { signal }),
     confirmSession: (sessionId) => request(`/sessions/${sessionId}/confirm`, { method: "POST" }),
     getSessionArtifacts: (sessionId, signal) => request(`/sessions/${sessionId}/artifacts`, { signal }),
+    listArchetypes: (signal) => request("/archetypes", { signal }),
+    updateTranscript: (sessionId, transcript) => request(`/sessions/${sessionId}/transcript`, { method: "PATCH", body: JSON.stringify({ transcript }) }),
   };
 }
 

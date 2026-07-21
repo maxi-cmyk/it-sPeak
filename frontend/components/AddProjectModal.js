@@ -1,15 +1,26 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { improvementAreaGroups, improvementAreaValues } from "@/lib/improvementAreas.mjs";
+import useApi from "@/hooks/useApi";
 
 export default function AddProjectModal({ initial, onConfirm, onClose }) {
+  const { authReady, listArchetypes } = useApi();
+  const [archetypes, setArchetypes] = useState([]);
   const [form, setForm] = useState({
     name: "",
     description: "",
     deadline: "",
     ...initial,
+    archetype: initial?.archetype || "corporate_board",
     improvementAreas: initial?.improvementAreas || improvementAreaValues,
   });
+
+  useEffect(() => {
+    if (!authReady) return undefined;
+    const controller = new AbortController();
+    listArchetypes(controller.signal).then(setArchetypes).catch(() => {});
+    return () => controller.abort();
+  }, [authReady]);
 
   const toggleImprovementArea = (area) => {
     setForm((current) => ({
@@ -53,6 +64,27 @@ export default function AddProjectModal({ initial, onConfirm, onClose }) {
               className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-zinc-50 placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors"
             />
           </div>
+          {archetypes.length > 0 && (
+            <fieldset>
+              <legend className="text-xs text-zinc-400 mb-1.5">Speaking archetype</legend>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {archetypes.filter((item) => item.status === "enabled").map((item) => {
+                  const selected = form.archetype === item.key;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => setForm({ ...form, archetype: item.key })}
+                      className={`rounded-lg border px-3 py-2 text-left text-sm transition-colors ${selected ? "border-violet-400 bg-violet-500/10 text-violet-200" : "border-zinc-700 bg-zinc-950/40 text-zinc-400 hover:border-zinc-600"}`}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+          )}
           <fieldset>
             <legend className="text-xs text-zinc-400">Fields to improve</legend>
             <p className="mb-3 mt-1 text-xs leading-relaxed text-zinc-600">
