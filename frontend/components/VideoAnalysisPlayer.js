@@ -56,6 +56,7 @@ export default function VideoAnalysisPlayer({ sessionId, analysis, qualityGate }
       }
     };
     const fallback = () => draw();
+    draw();
     if (typeof video.requestVideoFrameCallback === "function") {
       const loop = (now, metadata) => { draw(now, metadata); animationRef.current = video.requestVideoFrameCallback(loop); };
       animationRef.current = video.requestVideoFrameCallback(loop);
