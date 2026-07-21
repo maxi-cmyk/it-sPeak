@@ -79,7 +79,6 @@ export default function SessionSummaryPage() {
         <section className="mb-6 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
           <div className="border-b border-zinc-800 px-5 py-4">
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-violet-400">Your selected focus</p>
-            <h2 className="mt-1 text-base font-semibold text-zinc-100">Lowest score leads the next rehearsal</h2>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-zinc-800">
             <div className="bg-zinc-900 p-4">
@@ -90,7 +89,7 @@ export default function SessionSummaryPage() {
                   <div key={item.area}>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">Priority {item.priority}</span>
-                      <span className={`text-lg font-semibold ${item.priority === 1 ? "text-amber-300" : "text-zinc-200"}`}>{Math.round(item.score)}</span>
+                      <span className={`text-lg font-semibold ${item.priority === 1 ? "text-amber-300" : "text-zinc-200"}`}>{Math.round(item.score)}<span className="text-xs font-normal text-zinc-600">/100</span></span>
                     </div>
                     <p className="mt-1 text-sm leading-6 text-zinc-300">{item.message}</p>
                   </div>
@@ -105,7 +104,7 @@ export default function SessionSummaryPage() {
                   <div key={item.area}>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">Priority {item.priority}</span>
-                      <span className="text-lg font-semibold text-emerald-400">{Math.round(item.score)}</span>
+                      <span className="text-lg font-semibold text-emerald-400">{Math.round(item.score)}<span className="text-xs font-normal text-zinc-600">/100</span></span>
                     </div>
                     <p className="mt-1 text-sm leading-6 text-emerald-200">{item.message}</p>
                   </div>
@@ -141,18 +140,6 @@ export default function SessionSummaryPage() {
             </div>
           </section>
         </div>
-
-        {session.audioMetrics && (
-          <section className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-            {Object.entries(session.audioMetrics).map(([key, metric]) => (
-              <div key={key} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-                <p className="text-xs uppercase tracking-wider text-zinc-500">{key}</p>
-                <p className="mt-2 text-xl font-semibold text-zinc-100">{metric.value}</p>
-                <p className="mt-1 text-xs text-zinc-500">{metric.label} · score {Math.round(metric.score)}</p>
-              </div>
-            ))}
-          </section>
-        )}
 
         {session.transcript && (
           <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-6">

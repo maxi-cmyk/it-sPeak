@@ -61,6 +61,58 @@ def _aggregates(report: CoachingReport) -> dict[str, float | None]:
     return {"overall_score": _average([face, body, vocal]), "vocal_score": vocal, "face_score": face, "body_score": body}
 
 
+def _non_proficient_message(area: ImprovementArea, score: float, report: CoachingReport) -> str:
+    metrics = report.audio.readable_metrics
+    face = report.raw_analysis.face
+    body = report.raw_analysis.body
+    pace = metrics.get("pace")
+    intonation = metrics.get("intonation")
+    fillers = metrics.get("fillers")
+    if area == ImprovementArea.PACING and pace:
+        return f"Your pace measured {pace['value']} {pace['unit']} ({pace['label'].lower()}), outside the {pace['target_range']} target. {pace['meaning']}"
+    if area == ImprovementArea.INTONATION and intonation:
+        return f"Pitch variation measured {intonation['value']} {intonation['unit']} ({intonation['label'].lower()}), against a target of {intonation['target_range']}. {intonation['meaning']}"
+    if area == ImprovementArea.FILLER_WORDS and fillers:
+        return f"{fillers['value']} filler words flagged ({fillers['label'].lower()}), above the {fillers['target_range']} target. {fillers['meaning']}"
+    if area == ImprovementArea.EYE_CONTACT:
+        return f"You held eye contact for {face.eye_contact_ratio * 100:.0f}% of tracked frames — building toward sustained camera connection will strengthen audience trust."
+    if area == ImprovementArea.FACIAL_EXPRESSION:
+        return f"Facial expression variance measured {face.expression_variance * 100:.0f}% — more visible range will help your key moments land."
+    if area == ImprovementArea.POSTURE:
+        return f"Postural alignment measured {body.posture_alignment * 100:.0f}% — a more grounded stance will project confidence."
+    if area == ImprovementArea.GESTURES:
+        return f"Gestures averaged {body.gesture_frequency:.1f} per minute across {body.gesture_range * 100:.0f}% of your range — widen your movements for more purposeful emphasis."
+    return f"This area scored {score:.0f}/100, below your coaching threshold — prioritise it in your next rehearsal."
+
+
+def _proficient_message(area: ImprovementArea, score: float, report: CoachingReport, next_area: ImprovementArea | None, labels: dict[ImprovementArea, str]) -> str:
+    metrics = report.audio.readable_metrics
+    face = report.raw_analysis.face
+    body = report.raw_analysis.body
+    pace = metrics.get("pace")
+    intonation = metrics.get("intonation")
+    fillers = metrics.get("fillers")
+    if area == ImprovementArea.PACING and pace:
+        base = f"Your pace held at {pace['value']} {pace['unit']} ({pace['label'].lower()}), inside the {pace['target_range']} target."
+    elif area == ImprovementArea.INTONATION and intonation:
+        base = f"Pitch variation measured {intonation['value']} {intonation['unit']} ({intonation['label'].lower()}), within the {intonation['target_range']} target."
+    elif area == ImprovementArea.FILLER_WORDS and fillers:
+        base = f"Only {fillers['value']} filler words detected ({fillers['label'].lower()}), under the {fillers['target_range']} target."
+    elif area == ImprovementArea.EYE_CONTACT:
+        base = f"You held eye contact for {face.eye_contact_ratio * 100:.0f}% of tracked frames, well above the coaching threshold."
+    elif area == ImprovementArea.FACIAL_EXPRESSION:
+        base = f"Facial expression variance measured {face.expression_variance * 100:.0f}%, a strong, visible range."
+    elif area == ImprovementArea.POSTURE:
+        base = f"Postural alignment measured {body.posture_alignment * 100:.0f}%, grounded and consistent."
+    elif area == ImprovementArea.GESTURES:
+        base = f"Gestures averaged {body.gesture_frequency:.1f} per minute across {body.gesture_range * 100:.0f}% of your range, purposeful and controlled."
+    else:
+        base = f"You are proficient in {labels[area]} at {score:.0f}/100."
+    if next_area:
+        return f"{base} Prioritise {labels[next_area]}, your lowest-scoring other selected area."
+    return f"{base} Maintain this strength and select another area for your next growth target."
+
+
 def _apply_improvement_focus(report: CoachingReport, aggregates: dict[str, float | None] | None = None) -> CoachingReport:
     audio_scores = report.audio.performance_scores
     score_by_area = {
@@ -74,7 +126,7 @@ def _apply_improvement_focus(report: CoachingReport, aggregates: dict[str, float
     }
     labels = {
         ImprovementArea.PACING: "Pacing",
-        ImprovementArea.INTONATION: "Vocal variety",
+        ImprovementArea.INTONATION: "Vocab variety",
         ImprovementArea.FILLER_WORDS: "Filler-word control",
         ImprovementArea.EYE_CONTACT: "Eye contact",
         ImprovementArea.FACIAL_EXPRESSION: "Facial expression",
@@ -94,12 +146,10 @@ def _apply_improvement_focus(report: CoachingReport, aggregates: dict[str, float
             continue
         proficient = score > 80
         next_area = next((candidate for candidate in ranked if candidate != area), None)
-        if proficient and next_area:
-            message = f"You are proficient in {labels[area]} at {score:.0f}. Prioritise {labels[next_area]}, your lowest-scoring other selected area."
-        elif proficient:
-            message = f"You are proficient in {labels[area]} at {score:.0f}. Maintain this strength and select another area for your next growth target."
+        if proficient:
+            message = _proficient_message(area, score, report, next_area, labels)
         else:
-            message = f"Priority {priority}: improve {labels[area]} ({score:.0f}), starting with the lowest-scoring selected area."
+            message = _non_proficient_message(area, score, report)
         guidance.append(ImprovementGuidance(area=area, score=score, priority=priority, proficient=proficient, message=message))
 
     priority_by_area = {item.area: item.priority for item in guidance}

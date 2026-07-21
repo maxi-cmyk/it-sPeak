@@ -5,6 +5,67 @@ const averageAvailable = (...values) => {
   return available.length ? Math.round(available.reduce((sum, value) => sum + value, 0) / available.length) : null;
 };
 
+function nonProficientMessage(area, score, report) {
+  const metrics = report.audio?.readable_metrics || {};
+  const face = report.raw_analysis?.face || {};
+  const body = report.raw_analysis?.body || {};
+  if (area === "pacing" && metrics.pace) {
+    const pace = metrics.pace;
+    return `Your pace measured ${pace.value} ${pace.unit} (${pace.label.toLowerCase()}), outside the ${pace.target_range} target. ${pace.meaning}`;
+  }
+  if (area === "intonation" && metrics.intonation) {
+    const intonation = metrics.intonation;
+    return `Pitch variation measured ${intonation.value} ${intonation.unit} (${intonation.label.toLowerCase()}), against a target of ${intonation.target_range}. ${intonation.meaning}`;
+  }
+  if (area === "filler_words" && metrics.fillers) {
+    const fillers = metrics.fillers;
+    return `${fillers.value} filler words flagged (${fillers.label.toLowerCase()}), above the ${fillers.target_range} target. ${fillers.meaning}`;
+  }
+  if (area === "eye_contact" && Number.isFinite(face.eye_contact_ratio)) {
+    return `You held eye contact for ${Math.round(face.eye_contact_ratio * 100)}% of tracked frames — building toward sustained camera connection will strengthen audience trust.`;
+  }
+  if (area === "facial_expression" && Number.isFinite(face.expression_variance)) {
+    return `Facial expression variance measured ${Math.round(face.expression_variance * 100)}% — more visible range will help your key moments land.`;
+  }
+  if (area === "posture" && Number.isFinite(body.posture_alignment)) {
+    return `Postural alignment measured ${Math.round(body.posture_alignment * 100)}% — a more grounded stance will project confidence.`;
+  }
+  if (area === "gestures" && Number.isFinite(body.gesture_frequency) && Number.isFinite(body.gesture_range)) {
+    return `Gestures averaged ${body.gesture_frequency.toFixed(1)} per minute across ${Math.round(body.gesture_range * 100)}% of your range — widen your movements for more purposeful emphasis.`;
+  }
+  return `This area scored ${Math.round(score)}/100, below your coaching threshold — prioritise it in your next rehearsal.`;
+}
+
+function proficientMessage(area, score, report, nextArea) {
+  const metrics = report.audio?.readable_metrics || {};
+  const face = report.raw_analysis?.face || {};
+  const body = report.raw_analysis?.body || {};
+  let base;
+  if (area === "pacing" && metrics.pace) {
+    const pace = metrics.pace;
+    base = `Your pace held at ${pace.value} ${pace.unit} (${pace.label.toLowerCase()}), inside the ${pace.target_range} target.`;
+  } else if (area === "intonation" && metrics.intonation) {
+    const intonation = metrics.intonation;
+    base = `Pitch variation measured ${intonation.value} ${intonation.unit} (${intonation.label.toLowerCase()}), within the ${intonation.target_range} target.`;
+  } else if (area === "filler_words" && metrics.fillers) {
+    const fillers = metrics.fillers;
+    base = `Only ${fillers.value} filler words detected (${fillers.label.toLowerCase()}), under the ${fillers.target_range} target.`;
+  } else if (area === "eye_contact" && Number.isFinite(face.eye_contact_ratio)) {
+    base = `You held eye contact for ${Math.round(face.eye_contact_ratio * 100)}% of tracked frames, well above the coaching threshold.`;
+  } else if (area === "facial_expression" && Number.isFinite(face.expression_variance)) {
+    base = `Facial expression variance measured ${Math.round(face.expression_variance * 100)}%, a strong, visible range.`;
+  } else if (area === "posture" && Number.isFinite(body.posture_alignment)) {
+    base = `Postural alignment measured ${Math.round(body.posture_alignment * 100)}%, grounded and consistent.`;
+  } else if (area === "gestures" && Number.isFinite(body.gesture_frequency) && Number.isFinite(body.gesture_range)) {
+    base = `Gestures averaged ${body.gesture_frequency.toFixed(1)} per minute across ${Math.round(body.gesture_range * 100)}% of your range, purposeful and controlled.`;
+  } else {
+    base = `You are proficient in ${improvementAreaLabels[area]} at ${Math.round(score)}/100.`;
+  }
+  return nextArea
+    ? `${base} Prioritise ${improvementAreaLabels[nextArea]}, your lowest-scoring other selected area.`
+    : `${base} Maintain this strength and select another area for your next growth target.`;
+}
+
 function buildImprovementGuidance(report, scores) {
   if (report.improvement_guidance?.length) return report.improvement_guidance;
   const selected = report.improvement_areas || improvementAreaValues;
@@ -19,11 +80,7 @@ function buildImprovementGuidance(report, scores) {
       score: scores[area],
       priority: index + 1,
       proficient,
-      message: proficient
-        ? nextArea
-          ? `You are proficient in ${improvementAreaLabels[area]} at ${Math.round(scores[area])}. Prioritise ${improvementAreaLabels[nextArea]}, your lowest-scoring other selected area.`
-          : `You are proficient in ${improvementAreaLabels[area]} at ${Math.round(scores[area])}. Maintain this strength and select another area for your next growth target.`
-        : `Priority ${index + 1}: improve ${improvementAreaLabels[area]} (${Math.round(scores[area])}), starting with the lowest-scoring selected area.`,
+      message: proficient ? proficientMessage(area, scores[area], report, nextArea) : nonProficientMessage(area, scores[area], report),
     };
   });
 }
