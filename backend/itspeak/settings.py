@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     min_tracking_confidence: float = 0.5
     min_valid_frame_ratio: float = 0.30
 
+    # Smallest score gain (0-100 scale) counted as meaningful improvement.
+    # A comparable metric that moves by less than this between sessions is
+    # treated as stagnant and surfaced as "not improving" feedback.
+    stagnation_min_delta: float = 5.0
+
     gate_luminance_low: float = 45.0
     gate_luminance_high: float = 220.0
     gate_contrast_min: float = 20.0
