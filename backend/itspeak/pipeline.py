@@ -72,6 +72,14 @@ def _distance(a, b) -> float:
     return math.hypot(a.x - b.x, a.y - b.y)
 
 
+def shoulder_alignment(left, right) -> float:
+    """Score how level the shoulders are, regardless of image orientation."""
+    horizontal_span = abs(right.x - left.x)
+    vertical_offset = abs(right.y - left.y)
+    shoulder_tilt = math.atan2(vertical_offset, horizontal_span)
+    return max(0.0, 1.0 - shoulder_tilt / 0.45)
+
+
 def _box(landmarks) -> tuple[float, float, float, float]:
     xs, ys = [p.x for p in landmarks], [p.y for p in landmarks]
     return max(0.0, min(xs)), max(0.0, min(ys)), min(1.0, max(xs)), min(1.0, max(ys))
@@ -276,6 +284,9 @@ def _body_analysis(batch: FrameBatch):
                 artifacts.append(row)
                 continue
             lm = result.landmark
+            shoulder_visibility = float(np.mean([lm[i].visibility for i in (_L_SHO, _R_SHO)]))
+            if shoulder_visibility >= 0.45:
+                posture.append(shoulder_alignment(lm[_L_SHO], lm[_R_SHO]))
             core_visibility = float(np.mean([lm[i].visibility for i in (_L_SHO, _R_SHO, _L_HIP, _R_HIP)]))
             if core_visibility < 0.45:
                 previous_center = previous_torso = None
@@ -284,8 +295,6 @@ def _body_analysis(batch: FrameBatch):
             sx, sy = (lm[_L_SHO].x + lm[_R_SHO].x) / 2, (lm[_L_SHO].y + lm[_R_SHO].y) / 2
             hx, hy = (lm[_L_HIP].x + lm[_R_HIP].x) / 2, (lm[_L_HIP].y + lm[_R_HIP].y) / 2
             torso = max(math.hypot(sx - hx, sy - hy), 1e-4)
-            shoulder_tilt = abs(math.atan2(lm[_R_SHO].y - lm[_L_SHO].y, lm[_R_SHO].x - lm[_L_SHO].x))
-            posture.append(max(0, 1 - shoulder_tilt / 0.45))
             wrists.append(((lm[_L_WRI].x, lm[_L_WRI].y), (lm[_R_WRI].x, lm[_R_WRI].y), torso))
             openness.append(float(abs(lm[_L_WRI].x - lm[_R_WRI].x) / torso > 1.0))
             current_center = np.array([(sx + hx) / 2, (sy + hy) / 2])

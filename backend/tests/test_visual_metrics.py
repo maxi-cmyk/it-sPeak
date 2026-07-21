@@ -1,7 +1,9 @@
 import unittest
+from types import SimpleNamespace
+
 import numpy as np
 
-from itspeak.pipeline import OneEuro, classify_movement, spatial_coverage
+from itspeak.pipeline import OneEuro, classify_movement, shoulder_alignment, spatial_coverage
 
 
 class VisualMetricTest(unittest.TestCase):
@@ -23,6 +25,17 @@ class VisualMetricTest(unittest.TestCase):
         values = [filter_(value) for value in [0, 0, 1, 1]]
         self.assertGreater(values[2], 0)
         self.assertLess(values[2], 1)
+
+    def test_level_shoulders_score_full_alignment_in_either_x_order(self):
+        left = SimpleNamespace(x=.7, y=.3)
+        right = SimpleNamespace(x=.3, y=.3)
+        self.assertEqual(shoulder_alignment(left, right), 1.0)
+        self.assertEqual(shoulder_alignment(right, left), 1.0)
+
+    def test_sloped_shoulders_score_below_level_shoulders(self):
+        left = SimpleNamespace(x=.7, y=.3)
+        right = SimpleNamespace(x=.3, y=.4)
+        self.assertLess(shoulder_alignment(left, right), 1.0)
 
 
 if __name__ == "__main__":
