@@ -60,5 +60,8 @@ export function createApiClient(getToken) {
 export async function getLandmarksFromUrl(url, signal) {
   const response = await fetch(url, { signal });
   if (!response.ok) throw new ApiError("Landmark overlays are unavailable.", { status: response.status });
-  return response.json();
+  const buffer = await response.arrayBuffer();
+  const isGzip = buffer.byteLength >= 2 && new Uint8Array(buffer, 0, 2).every((byte, index) => byte === [0x1f, 0x8b][index]);
+  const bytes = isGzip ? await new Response(new Blob([buffer]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer() : buffer;
+  return JSON.parse(new TextDecoder("utf-8").decode(bytes));
 }
