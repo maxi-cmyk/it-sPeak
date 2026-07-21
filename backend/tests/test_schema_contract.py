@@ -23,6 +23,19 @@ class SchemaContractTest(unittest.TestCase):
         self.assertIn("session-artifacts", sql)
         self.assertIn("improvement_areas text[] not null", sql)
 
+    def test_every_archetype_has_a_populated_scoring_config(self):
+        backend = Path(__file__).resolve().parents[1]
+        sql = (backend / "persistence" / "schema.sql").read_text(encoding="utf-8")
+        for archetype in (
+            "corporate_board",
+            "motivational_keynote",
+            "startup_pitch",
+            "academic_conference",
+            "informal_team",
+            "job_interview",
+        ):
+            self.assertIn(f"('{archetype}', 1, '{{\"eye_contact\"", sql)
+
 
 if __name__ == "__main__":
     unittest.main()
