@@ -19,6 +19,7 @@ _MOUTH_L, _MOUTH_R, _LIP_TOP, _LIP_BOT = 61, 291, 13, 14
 _BROW_L, _BROW_R = 105, 334
 _CHEEK_L, _CHEEK_R = 117, 346
 _L_SHO, _R_SHO, _L_HIP, _R_HIP, _L_WRI, _R_WRI = 11, 12, 23, 24, 15, 16
+_POSE_NOSE = 0
 
 
 @dataclass
@@ -78,6 +79,36 @@ def shoulder_alignment(left, right) -> float:
     vertical_offset = abs(right.y - left.y)
     shoulder_tilt = math.atan2(vertical_offset, horizontal_span)
     return max(0.0, 1.0 - shoulder_tilt / 0.45)
+
+
+def posture_from_landmarks(lm) -> float | None:
+    """Robust 0..1 posture proxy from pose landmarks.
+
+    Blends two forgiving signals so a normal upright frame scores high and
+    the value never collapses to zero from a single noisy measurement:
+
+    * shoulder levelness - the shoulder line should be roughly horizontal.
+    * torso uprightness - the neck (shoulder-center to nose) should be
+      roughly vertical rather than leaning sideways.
+
+    Both signals use generous tolerances (a level/upright person lands near
+    1.0 and only a strong tilt or sideways lean pulls the score down).
+    Returns ``None`` when the shoulders are not visible enough to judge
+    posture at all, so the caller can decide how to handle missing data.
+    """
+    if min(lm[_L_SHO].visibility, lm[_R_SHO].visibility) < 0.25:
+        return None
+    span = math.hypot(lm[_R_SHO].x - lm[_L_SHO].x, lm[_R_SHO].y - lm[_L_SHO].y)
+    vertical_offset = abs(lm[_R_SHO].y - lm[_L_SHO].y)
+    # Tolerance of 0.5 => shoulders can slope ~27 degrees before levelness hits 0.
+    levelness = 1.0 - min(1.0, (vertical_offset / max(span, 1e-4)) / 0.5)
+    shoulder_cx = (lm[_L_SHO].x + lm[_R_SHO].x) / 2
+    shoulder_cy = (lm[_L_SHO].y + lm[_R_SHO].y) / 2
+    lean = abs(lm[_POSE_NOSE].x - shoulder_cx)
+    rise = abs(shoulder_cy - lm[_POSE_NOSE].y)
+    # Tolerance of 0.6 keeps a moderate head lean from tanking the score.
+    uprightness = 1.0 - min(1.0, (lean / max(rise, 1e-4)) / 0.6)
+    return float(max(0.0, min(1.0, 0.5 * levelness + 0.5 * uprightness)))
 
 
 def _box(landmarks) -> tuple[float, float, float, float]:
@@ -275,6 +306,7 @@ def _body_analysis(batch: FrameBatch):
     cumulative_center = np.zeros(2, dtype=float)
     previous_center = None
     previous_torso = None
+    pose_frames = 0
     try:
         for index, frame in enumerate(batch.frames):
             result = pose.process(frame).pose_landmarks
@@ -283,10 +315,11 @@ def _body_analysis(batch: FrameBatch):
                 previous_center = previous_torso = None
                 artifacts.append(row)
                 continue
+            pose_frames += 1
             lm = result.landmark
-            shoulder_visibility = float(np.mean([lm[i].visibility for i in (_L_SHO, _R_SHO)]))
-            if shoulder_visibility >= 0.45:
-                posture.append(shoulder_alignment(lm[_L_SHO], lm[_R_SHO]))
+            posture_value = posture_from_landmarks(lm)
+            if posture_value is not None:
+                posture.append(posture_value)
             core_visibility = float(np.mean([lm[i].visibility for i in (_L_SHO, _R_SHO, _L_HIP, _R_HIP)]))
             if core_visibility < 0.45:
                 previous_center = previous_torso = None
@@ -323,7 +356,15 @@ def _body_analysis(batch: FrameBatch):
     movement_class, purposeful = classify_movement(np.asarray(centers))
     coverage = spatial_coverage(np.asarray(boxes)) if boxes else None
     confidence = _metric_confidence(len(centers), batch.count)
-    metrics = BodyMetrics(posture_alignment=float(np.mean(posture)) if posture else 0, gesture_frequency=max(0, gesture_frequency), gesture_range=max(0, gesture_range), openness_ratio=float(np.mean(openness)) if openness else 0, movement_purposefulness=None if movement_class == "insufficient_data" else purposeful, movement_classification=movement_class, movement_confidence=confidence, spatial_use=coverage, spatial_confidence=confidence if coverage is not None else MetricConfidence.INSUFFICIENT, frames_with_pose=len(posture))
+    if posture:
+        posture_alignment = float(np.mean(posture))
+    elif pose_frames:
+        # A body was tracked but shoulders were never clear enough to measure
+        # posture; assume a neutral-upright baseline instead of punishing with 0.
+        posture_alignment = 0.7
+    else:
+        posture_alignment = 0.0
+    metrics = BodyMetrics(posture_alignment=posture_alignment, gesture_frequency=max(0, gesture_frequency), gesture_range=max(0, gesture_range), openness_ratio=float(np.mean(openness)) if openness else 0, movement_purposefulness=None if movement_class == "insufficient_data" else purposeful, movement_classification=movement_class, movement_confidence=confidence, spatial_use=coverage, spatial_confidence=confidence if coverage is not None else MetricConfidence.INSUFFICIENT, frames_with_pose=len(posture))
     return metrics, artifacts
 
 

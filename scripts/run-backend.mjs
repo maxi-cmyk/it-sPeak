@@ -1,6 +1,7 @@
 import { createInterface } from "node:readline";
 import { existsSync, readFileSync } from "node:fs";
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
+import { createConnection } from "node:net";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
@@ -12,7 +13,6 @@ const python = process.platform === "win32"
   ? join(backendRoot, ".venv", "Scripts", "python.exe")
   : join(backendRoot, ".venv", "bin", "python");
 const redisServer = process.platform === "win32" ? "redis-server.exe" : "redis-server";
-const redisCli = process.platform === "win32" ? "redis-cli.exe" : "redis-cli";
 const children = [];
 let shuttingDown = false;
 
@@ -58,12 +58,24 @@ function startService(label, command, args, options = {}) {
 }
 
 function redisResponds(redisUrl) {
-  const result = spawnSync(redisCli, ["-u", redisUrl, "ping"], {
-    cwd: backendRoot,
-    stdio: "ignore",
-    timeout: 2000,
+  const parsed = new URL(redisUrl);
+  return new Promise((resolve) => {
+    const socket = createConnection({
+      host: parsed.hostname,
+      port: Number(parsed.port || 6379),
+    });
+    let settled = false;
+    const finish = (ready) => {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      resolve(ready);
+    };
+    socket.setTimeout(2000, () => finish(false));
+    socket.on("connect", () => socket.write("*1\r\n$4\r\nPING\r\n"));
+    socket.on("data", (data) => finish(data.toString().startsWith("+PONG")));
+    socket.on("error", () => finish(false));
   });
-  return result.status === 0;
 }
 
 function delay(milliseconds) {
@@ -71,7 +83,7 @@ function delay(milliseconds) {
 }
 
 async function ensureRedis(redisUrl) {
-  if (redisResponds(redisUrl)) {
+  if (await redisResponds(redisUrl)) {
     process.stdout.write("[redis] Reusing the running Redis instance.\n");
     return;
   }
@@ -84,7 +96,7 @@ async function ensureRedis(redisUrl) {
   startService("redis", redisServer, ["--port", port, "--save", "", "--appendonly", "no"]);
   for (let attempt = 0; attempt < 25; attempt += 1) {
     await delay(200);
-    if (redisResponds(redisUrl)) {
+    if (await redisResponds(redisUrl)) {
       process.stdout.write(`[redis] Ready on ${parsed.hostname}:${port}.\n`);
       return;
     }
