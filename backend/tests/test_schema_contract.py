@@ -5,11 +5,17 @@ from pathlib import Path
 
 
 class SchemaContractTest(unittest.TestCase):
-    def test_sql_editor_snapshot_matches_initial_migration(self):
+    def test_master_schema_tracks_the_latest_migration(self):
         backend = Path(__file__).resolve().parents[1]
         snapshot = (backend / "persistence" / "schema.sql").read_text(encoding="utf-8")
-        migration = (backend.parent / "supabase" / "migrations" / "202607170001_initial_persistence.sql").read_text(encoding="utf-8")
-        self.assertEqual(snapshot, migration)
+        migrations = sorted((backend.parent / "supabase" / "migrations").glob("*.sql"))
+
+        self.assertTrue(migrations, "Expected at least one Supabase migration")
+        latest_migration = migrations[-1].stem
+        self.assertIn(
+            f"Consolidated through Supabase migration: {latest_migration}.",
+            snapshot,
+        )
 
     def test_schema_contains_required_security_and_lifecycle_guards(self):
         backend = Path(__file__).resolve().parents[1]
@@ -22,6 +28,20 @@ class SchemaContractTest(unittest.TestCase):
         self.assertIn("commit_analysis_session", sql)
         self.assertIn("session-artifacts", sql)
         self.assertIn("improvement_areas text[] not null", sql)
+        self.assertIn("set search_path = public, extensions", sql)
+
+    def test_master_schema_contains_the_latest_visual_scoring_bands(self):
+        backend = Path(__file__).resolve().parents[1]
+        sql = (backend / "persistence" / "schema.sql").read_text(encoding="utf-8")
+
+        self.assertIn(
+            '"gesture_frequency":{"kind":"target","ideal":0.70,"tol_low":0.90,"tol_high":0.90}',
+            sql,
+        )
+        self.assertIn(
+            '"expression":{"kind":"floor","low":0.02,"ideal":0.12}',
+            sql,
+        )
 
     def test_every_archetype_has_a_populated_scoring_config(self):
         backend = Path(__file__).resolve().parents[1]

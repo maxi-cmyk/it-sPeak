@@ -1,4 +1,7 @@
--- it'sPEAK durable persistence foundation for Supabase/Postgres.
+-- it'sPEAK master schema for a new Supabase/Postgres database.
+-- Consolidated through Supabase migration: 202607220001_loosen_visual_scoring_bands.
+-- Upgrade an existing database with the timestamped files in supabase/migrations;
+-- do not run this fresh-install snapshot over an already initialized database.
 -- Ownership IDs are Clerk JWT `sub` strings, not auth.users UUIDs.
 
 create extension if not exists pgcrypto;

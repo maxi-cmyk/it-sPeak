@@ -38,6 +38,10 @@ node_modules/
 .next/
 .claude/
 
+# --- Local Impeccable tooling ---
+.impeccable/
+.agents/skills/impeccable/
+
 # --- Supabase CLI local link state ---
 supabase/.temp/
 
