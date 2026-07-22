@@ -16,6 +16,8 @@ from .persistence import get_persistence
 from .progress import detect_stagnation
 from .quality import run_quality_gate
 
+COACHING_THRESHOLD = 80
+
 
 def _enqueue_analysis(session_id: str):
     result = analyze_session_task.delay(session_id)
@@ -82,7 +84,7 @@ def _non_proficient_message(area: ImprovementArea, score: float, report: Coachin
         return f"Postural alignment measured {body.posture_alignment * 100:.0f}% — a more grounded stance will project confidence."
     if area == ImprovementArea.GESTURES:
         return f"Gestures averaged {body.gesture_frequency:.1f} per minute across {body.gesture_range * 100:.0f}% of your range — widen your movements for more purposeful emphasis."
-    return f"This area scored {score:.0f}/100, below your coaching threshold — prioritise it in your next rehearsal."
+    return f"This area scored {score:.0f}/100, below the {COACHING_THRESHOLD}/100 coaching threshold — prioritise it in your next rehearsal."
 
 
 def _proficient_message(area: ImprovementArea, score: float, report: CoachingReport, next_area: ImprovementArea | None, labels: dict[ImprovementArea, str]) -> str:
@@ -129,14 +131,14 @@ def _apply_improvement_focus(report: CoachingReport, aggregates: dict[str, float
         ImprovementArea.INTONATION: "Vocab variety",
         ImprovementArea.FILLER_WORDS: "Filler-word control",
         ImprovementArea.EYE_CONTACT: "Eye contact",
-        ImprovementArea.FACIAL_EXPRESSION: "Facial expression",
+        ImprovementArea.FACIAL_EXPRESSION: "Facial expressions",
         ImprovementArea.POSTURE: "Posture",
         ImprovementArea.GESTURES: "Gestures",
     }
     selected = list(dict.fromkeys(report.improvement_areas))
     def needs_work(area: ImprovementArea) -> bool:
         score = score_by_area.get(area)
-        return score is not None and score <= 80
+        return score is not None and score < COACHING_THRESHOLD
 
     ranked = sorted(selected, key=lambda area: score_by_area[area] if score_by_area[area] is not None else 101)
     guidance: list[ImprovementGuidance] = []
@@ -144,7 +146,7 @@ def _apply_improvement_focus(report: CoachingReport, aggregates: dict[str, float
         score = score_by_area[area]
         if score is None:
             continue
-        proficient = score > 80
+        proficient = score >= COACHING_THRESHOLD
         next_area = next((candidate for candidate in ranked if candidate != area), None)
         if proficient:
             message = _proficient_message(area, score, report, next_area, labels)

@@ -26,3 +26,25 @@ test("dashboard and project routes no longer import fixture projects", async () 
   assert.equal(dashboard.includes("initialProjects"), false);
   assert.equal(project.includes("initialProjects"), false);
 });
+
+test("project cards display retained session capacity", async () => {
+  const card = await readFile(new URL("../components/ProjectCard.js", import.meta.url), "utf8");
+  assert.equal(card.includes("project.session_count ?? 0"), true);
+  assert.equal(card.includes("/5 sessions"), true);
+});
+
+test("project folder exposes one first-session action and an editor", async () => {
+  const project = await readFile(new URL("../app/project/[id]/page.js", import.meta.url), "utf8");
+  assert.equal(project.match(/Add first session/g)?.length, 1);
+  assert.equal(project.includes("Start session 1"), false);
+  assert.equal(project.includes("Edit project"), true);
+  assert.equal(project.includes("updateProject(id"), true);
+});
+
+test("dashboard and project headers omit the removed introductory copy", async () => {
+  const dashboard = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+  const project = await readFile(new URL("../app/project/[id]/page.js", import.meta.url), "utf8");
+  assert.equal(dashboard.includes("Your rehearsal projects"), false);
+  assert.equal(dashboard.includes("Track each baseline"), false);
+  assert.equal(project.includes("Project ·"), false);
+});

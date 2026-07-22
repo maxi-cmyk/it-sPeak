@@ -1,5 +1,7 @@
 import { improvementAreaLabels, improvementAreaModuleByValue, improvementAreaValues } from "./improvementAreas.mjs";
 
+export const COACHING_THRESHOLD = 80;
+
 const averageAvailable = (...values) => {
   const available = values.filter((value) => Number.isFinite(value));
   return available.length ? Math.round(available.reduce((sum, value) => sum + value, 0) / available.length) : null;
@@ -33,7 +35,7 @@ function nonProficientMessage(area, score, report) {
   if (area === "gestures" && Number.isFinite(body.gesture_frequency) && Number.isFinite(body.gesture_range)) {
     return `Gestures averaged ${body.gesture_frequency.toFixed(1)} per minute across ${Math.round(body.gesture_range * 100)}% of your range — widen your movements for more purposeful emphasis.`;
   }
-  return `This area scored ${Math.round(score)}/100, below your coaching threshold — prioritise it in your next rehearsal.`;
+  return `This area scored ${Math.round(score)}/100, below the ${COACHING_THRESHOLD}/100 coaching threshold — prioritise it in your next rehearsal.`;
 }
 
 function proficientMessage(area, score, report, nextArea) {
@@ -67,13 +69,26 @@ function proficientMessage(area, score, report, nextArea) {
 }
 
 function buildImprovementGuidance(report, scores) {
-  if (report.improvement_guidance?.length) return report.improvement_guidance;
   const selected = report.improvement_areas || improvementAreaValues;
   const ranked = selected
     .filter((area) => Number.isFinite(scores[area]))
     .sort((left, right) => scores[left] - scores[right]);
+  if (report.improvement_guidance?.length) {
+    return report.improvement_guidance.map((item) => {
+      const proficient = item.score >= COACHING_THRESHOLD;
+      if (proficient === item.proficient) return item;
+      const nextArea = ranked.find((candidate) => candidate !== item.area);
+      return {
+        ...item,
+        proficient,
+        message: proficient
+          ? proficientMessage(item.area, item.score, report, nextArea)
+          : nonProficientMessage(item.area, item.score, report),
+      };
+    });
+  }
   return ranked.map((area, index) => {
-    const proficient = scores[area] > 80;
+    const proficient = scores[area] >= COACHING_THRESHOLD;
     const nextArea = ranked.find((candidate) => candidate !== area);
     return {
       area,
@@ -83,6 +98,20 @@ function buildImprovementGuidance(report, scores) {
       message: proficient ? proficientMessage(area, scores[area], report, nextArea) : nonProficientMessage(area, scores[area], report),
     };
   });
+}
+
+function buildObservedFeedback(report, scores) {
+  const selected = new Set(report.improvement_areas || improvementAreaValues);
+  return improvementAreaValues
+    .filter((area) => !selected.has(area) && Number.isFinite(scores[area]) && scores[area] < COACHING_THRESHOLD)
+    .sort((left, right) => scores[left] - scores[right])
+    .map((area) => ({
+      area,
+      module: improvementAreaModuleByValue[area],
+      score: scores[area],
+      text: `We observed that ${improvementAreaLabels[area]} scored ${Math.round(scores[area])}/100, which is below the ${COACHING_THRESHOLD}/100 coaching threshold.`,
+      tip: `${nonProficientMessage(area, scores[area], report)} Consider adding ${improvementAreaLabels[area]} to your selected focus.`,
+    }));
 }
 
 export function reportToSession(report, sessionId, projectId = "1", qualityGate = null) {
@@ -100,7 +129,8 @@ export function reportToSession(report, sessionId, projectId = "1", qualityGate 
     gestures: report.scores.gesture_score,
   };
   const improvementGuidance = buildImprovementGuidance(report, scoresByArea);
-  const activeModules = new Set(improvementGuidance.filter((item) => !item.proficient && item.score <= 80).map((item) => improvementAreaModuleByValue[item.area]));
+  const observedFeedback = buildObservedFeedback(report, scoresByArea);
+  const activeModules = new Set(improvementGuidance.filter((item) => !item.proficient && item.score < COACHING_THRESHOLD).map((item) => improvementAreaModuleByValue[item.area]));
   const priorityByModule = Object.fromEntries(
     ["audio", "face", "body"].map((module) => [module, Math.min(...improvementGuidance.filter((item) => improvementAreaModuleByValue[item.area] === module && !item.proficient).map((item) => item.priority), 99)]),
   );
@@ -112,7 +142,7 @@ export function reportToSession(report, sessionId, projectId = "1", qualityGate 
     .sort((left, right) => priorityByModule[left.module] - priorityByModule[right.module])
     .slice(0, 6);
   const scoreEntries = [
-    ["Eye contact", report.scores.eye_contact_score], ["Expression", report.scores.expression_score],
+    ["Eye contact", report.scores.eye_contact_score], ["Facial expressions", report.scores.expression_score],
     ["Posture", report.scores.posture_score],
     ["Gesture", report.scores.gesture_score], ["Movement", report.scores.movement_purposefulness_score],
     ["Spatial use", report.scores.spatial_use_score], ["Voice", tone],
@@ -120,7 +150,7 @@ export function reportToSession(report, sessionId, projectId = "1", qualityGate 
   return {
     id: sessionId, projectId, name: "Latest analysis", overallScore: averageAvailable(...pillars), score: averageAvailable(...pillars), tone, body: body ?? 0, face: face ?? 0,
     targetTone: 85, targetBody: 85, targetFace: 85, date: new Date().toISOString().slice(0, 10),
-    duration: `${Math.round(report.raw_analysis.duration_seconds)}s`, feedback, improvementGuidance,
+    duration: `${Math.round(report.raw_analysis.duration_seconds)}s`, feedback, observedFeedback, improvementGuidance,
     transcript: report.audio.transcript.text, audioMetrics: report.audio.readable_metrics,
     warnings: report.raw_analysis.warnings, rawAnalysis: report.raw_analysis, qualityGate, report,
     radarData: scoreEntries.map(([subject, score]) => ({ subject, score, fullMark: 100 })),

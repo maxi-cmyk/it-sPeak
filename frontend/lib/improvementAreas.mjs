@@ -15,7 +15,7 @@ export const improvementAreaGroups = [
     detail: "How you appear and move on camera",
     options: [
       { value: "eye_contact", label: "Eye contact", detail: "Audience and camera connection", icon: "◉" },
-      { value: "facial_expression", label: "Expression", detail: "Visible emphasis and variation", icon: "⌒" },
+      { value: "facial_expression", label: "Facial expressions", detail: "Visible emphasis and variation", icon: "⌒" },
       { value: "posture", label: "Posture", detail: "Upright, grounded alignment", icon: "↥" },
       { value: "gestures", label: "Gestures", detail: "Purposeful range and openness", icon: "↗" },
     ],

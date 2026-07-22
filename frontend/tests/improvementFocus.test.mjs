@@ -30,6 +30,61 @@ test("selected improvement feedback is ranked lowest first and suppresses profic
   assert.match(session.improvementGuidance[2].message, /Prioritise Pacing/);
   assert.deepEqual(session.feedback.map((item) => item.module), ["audio", "body"]);
   assert.equal(session.feedback.some((item) => item.text === "Face advice"), false);
+  assert.deepEqual(session.observedFeedback.map((item) => item.area), ["filler_words", "gestures", "intonation"]);
+  assert.equal(session.observedFeedback[0].text, "We observed that Filler words scored 65/100, which is below the 80/100 coaching threshold.");
+  assert.match(session.observedFeedback[0].tip, /Consider adding Filler words to your selected focus/);
   assert.equal(session.face, 85);
+  assert.equal(session.radarData.some((item) => item.subject === "Facial expressions"), true);
+  assert.equal(session.radarData.some((item) => item.subject === "Expression"), false);
   assert.equal(session.radarData.some((item) => item.subject === "Smile proxy"), false);
+});
+
+test("a score of 80 is proficient and does not generate coaching feedback", () => {
+  const session = reportToSession({
+    improvement_areas: ["facial_expression"],
+    improvement_guidance: [{ area: "facial_expression", score: 80, priority: 1, proficient: false, message: "Old coaching message" }],
+    scores: {
+      eye_contact_score: 80,
+      expression_score: 80,
+      posture_score: 85,
+      gesture_score: 85,
+    },
+    cards: [{ module: "face", problem: "Face advice", actionable_fix: "Face drill" }],
+    audio: {
+      performance_scores: { aggregate_vocal_rating: 85, pacing_alignment: 85, vocal_intonation_variety: 85, word_choice_efficiency: 85 },
+      actionable_coaching_cards: [],
+      transcript: { text: "Hello" },
+      readable_metrics: {},
+    },
+    raw_analysis: { duration_seconds: 30, warnings: [] },
+  }, "session-2", "project-1");
+
+  assert.equal(session.improvementGuidance[0].proficient, true);
+  assert.equal(session.feedback.length, 0);
+  assert.equal(session.observedFeedback.some((item) => item.area === "eye_contact"), false);
+});
+
+test("observed facial-expression feedback uses the below-threshold wording", () => {
+  const session = reportToSession({
+    improvement_areas: ["pacing"],
+    scores: {
+      eye_contact_score: 85,
+      expression_score: 0,
+      posture_score: 85,
+      gesture_score: 85,
+    },
+    cards: [],
+    audio: {
+      performance_scores: { aggregate_vocal_rating: 85, pacing_alignment: 85, vocal_intonation_variety: 85, word_choice_efficiency: 85 },
+      actionable_coaching_cards: [],
+      transcript: { text: "Hello" },
+      readable_metrics: {},
+    },
+    raw_analysis: { duration_seconds: 30, warnings: [] },
+  }, "session-3", "project-1");
+
+  assert.equal(
+    session.observedFeedback.find((item) => item.area === "facial_expression")?.text,
+    "We observed that Facial expressions scored 0/100, which is below the 80/100 coaching threshold.",
+  );
 });

@@ -67,6 +67,16 @@ class ImprovementFocusTest(unittest.TestCase):
         self.assertEqual(report.audio.actionable_coaching_cards, [])
         self.assertIn("select another area", report.improvement_guidance[0].message)
 
+    def test_threshold_score_is_proficient_and_gets_no_coaching(self):
+        source = make_report([ImprovementArea.PACING])
+        source.audio.performance_scores["pacing_alignment"] = 80
+
+        report = _apply_improvement_focus(source)
+
+        self.assertTrue(report.improvement_guidance[0].proficient)
+        self.assertEqual(report.audio.actionable_coaching_cards, [])
+        self.assertEqual(report.cards, [])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -32,11 +32,33 @@ export default function Dashboard() {
   const handleDelete = async (id) => { if (!window.confirm("Delete this project and all retained rehearsals? This cannot be undone.")) return; await deleteProject(id); await load(); };
 
   return (
-    <div className="min-h-screen bg-zinc-950"><Navbar />
-      <main className="max-w-5xl mx-auto px-6 py-10">
-        <div className="flex items-end justify-between mb-8"><div><p className="text-xs uppercase tracking-[0.22em] text-violet-400 mb-2">Practice archive</p><h1 className="text-2xl font-bold text-zinc-50">Dashboard</h1><p className="text-zinc-500 text-sm mt-1">Every project, baseline and rehearsal in one place.</p></div><button onClick={() => setModal("add")} className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors">+ Add Project</button></div>
-        {state.error && <div role="alert" className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300"><p>{state.error}</p><button onClick={load} className="mt-2 underline">Try again</button></div>}
-        {state.loading ? <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{[0,1,2].map((item) => <div key={item} className="h-48 animate-pulse rounded-xl border border-zinc-800 bg-zinc-900" />)}</div> : projects.length === 0 ? <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl border border-dashed border-zinc-800"><div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-3xl mb-4">🎤</div><p className="text-zinc-300 font-medium mb-1">No projects yet</p><p className="text-zinc-600 text-sm">Create a project; its first successful rehearsal becomes your protected baseline.</p></div> : <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{projects.map((project) => <ProjectCard key={project.id} project={project} onPin={() => handlePin(project)} onEdit={() => setModal({ type: "edit", project })} onDelete={() => handleDelete(project.id)} />)}</div>}
+    <div className="app-shell"><Navbar />
+      <main className="page-container">
+        <header className="page-header">
+          <div>
+            <h1 className="sr-only">Projects</h1>
+            <p className="page-kicker">Practice archive</p>
+          </div>
+          <button onClick={() => setModal("add")} className="btn-primary w-full sm:w-auto">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+            New project
+          </button>
+        </header>
+        {state.error && <div role="alert" className="status-panel mb-6 border-red-500/30 bg-red-500/10 text-red-700"><p className="font-medium">Projects could not be loaded.</p><p className="mt-1 text-xs text-red-700">{state.error}</p><button onClick={load} className="btn-quiet mt-3 border-red-500/40 text-red-700 hover:bg-red-500/10">Try again</button></div>}
+        {state.loading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading projects">{[0,1,2].map((item) => <div key={item} className="h-52 animate-pulse rounded-xl border border-zinc-800 bg-zinc-900" />)}</div>
+        ) : projects.length === 0 ? (
+          <section className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-800 px-6 py-20 text-center">
+            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-400">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5M8 16h3"/></svg>
+            </div>
+            <h2 className="text-base font-semibold text-zinc-200">Set up your first rehearsal project</h2>
+            <p className="mt-2 max-w-md text-sm leading-6 text-zinc-500">Choose the speaking areas you want to improve. Your first successful analysis becomes the protected baseline.</p>
+            <button onClick={() => setModal("add")} className="btn-primary mt-6">Create first project</button>
+          </section>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{projects.map((project) => <ProjectCard key={project.id} project={project} onPin={() => handlePin(project)} onEdit={() => setModal({ type: "edit", project })} onDelete={() => handleDelete(project.id)} />)}</div>
+        )}
       </main>
       {modal === "add" && <AddProjectModal onConfirm={handleAdd} onClose={() => setModal(null)} />}
       {modal?.type === "edit" && <AddProjectModal initial={modal.project} onConfirm={(form) => handleEdit(modal.project.id, form)} onClose={() => setModal(null)} />}

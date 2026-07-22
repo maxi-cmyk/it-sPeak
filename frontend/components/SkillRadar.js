@@ -11,25 +11,25 @@ import {
 export default function SkillRadar({ data }) {
   return (
     <ResponsiveContainer width="100%" height={260}>
-      <RadarChart data={data} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
-        <PolarGrid stroke="#3f3f46" />
+      <RadarChart data={data} outerRadius="68%" margin={{ top: 10, right: 48, bottom: 10, left: 48 }}>
+        <PolarGrid stroke="var(--border-strong)" />
         <PolarAngleAxis
           dataKey="subject"
-          tick={{ fill: "#a1a1aa", fontSize: 12 }}
+          tick={{ fill: "var(--text-subtle)", fontSize: 12 }}
         />
         <Tooltip
-          contentStyle={{ backgroundColor: "#18181b", border: "1px solid #3f3f46", borderRadius: 8 }}
-          labelStyle={{ color: "#fafafa" }}
-          itemStyle={{ color: "#a78bfa" }}
+          contentStyle={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-strong)", borderRadius: 8 }}
+          labelStyle={{ color: "var(--text-primary)" }}
+          itemStyle={{ color: "#2563eb" }}
         />
         <Radar
           name="Score"
           dataKey="score"
-          stroke="#a78bfa"
-          fill="#a78bfa"
+          stroke="#2563eb"
+          fill="#2563eb"
           fillOpacity={0.25}
           strokeWidth={2}
-          dot={{ fill: "#a78bfa", r: 3 }}
+          dot={{ fill: "#2563eb", r: 3 }}
         />
       </RadarChart>
     </ResponsiveContainer>

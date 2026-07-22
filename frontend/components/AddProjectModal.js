@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { improvementAreaGroups, improvementAreaValues } from "@/lib/improvementAreas.mjs";
 import useApi from "@/hooks/useApi";
 
-export default function AddProjectModal({ initial, onConfirm, onClose }) {
+export default function AddProjectModal({ initial, onConfirm, onClose, submitting = false, submitError = null }) {
   const { authReady, listArchetypes } = useApi();
   const [archetypes, setArchetypes] = useState([]);
   const [form, setForm] = useState({
@@ -33,19 +33,19 @@ export default function AddProjectModal({ initial, onConfirm, onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name.trim() || form.improvementAreas.length === 0) return;
+    if (submitting || !form.name.trim() || form.improvementAreas.length === 0) return;
     onConfirm(form);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="project-dialog-title">
+      <div className="modal-backdrop" onClick={onClose} />
+      <div className="modal-panel max-w-lg">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-zinc-50">
+          <h2 id="project-dialog-title" className="text-lg font-semibold text-zinc-50">
             {initial ? "Edit Project" : "New Project"}
           </h2>
-          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-200 transition-colors">
+          <button onClick={onClose} className="icon-button -mr-2" aria-label="Close project dialog">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -53,20 +53,26 @@ export default function AddProjectModal({ initial, onConfirm, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {submitError && (
+            <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-sm text-red-700">
+              Project changes could not be saved. {submitError}
+            </div>
+          )}
           <div>
-            <label className="block text-xs text-zinc-400 mb-1.5">Project Name</label>
+            <label className="field-label" htmlFor="project-name">Project name</label>
             <input
+              id="project-name"
               type="text"
               required
               placeholder="e.g. TED Talk prep"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-zinc-50 placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors"
+              className="field-control"
             />
           </div>
           {archetypes.length > 0 && (
             <fieldset>
-              <legend className="text-xs text-zinc-400 mb-1.5">Speaking archetype</legend>
+              <legend className="field-label">Speaking archetype</legend>
               <div className="grid gap-2 sm:grid-cols-2">
                 {archetypes.filter((item) => item.status === "enabled").map((item) => {
                   const selected = form.archetype === item.key;
@@ -76,7 +82,7 @@ export default function AddProjectModal({ initial, onConfirm, onClose }) {
                       type="button"
                       aria-pressed={selected}
                       onClick={() => setForm({ ...form, archetype: item.key })}
-                      className={`rounded-lg border px-3 py-2 text-left text-sm transition-colors ${selected ? "border-violet-400 bg-violet-500/10 text-violet-200" : "border-zinc-700 bg-zinc-950/40 text-zinc-400 hover:border-zinc-600"}`}
+                      className={`min-h-10 rounded-lg border px-3 py-2 text-left text-sm transition-colors ${selected ? "text-accent border-blue-600/60 bg-blue-500/10 shadow-[inset_0_0_0_1px_rgba(37,99,235,0.14)]" : "border-zinc-700 bg-zinc-950/40 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"}`}
                     >
                       {item.label}
                     </button>
@@ -86,8 +92,8 @@ export default function AddProjectModal({ initial, onConfirm, onClose }) {
             </fieldset>
           )}
           <fieldset>
-            <legend className="text-xs text-zinc-400">Fields to improve</legend>
-            <p className="mb-3 mt-1 text-xs leading-relaxed text-zinc-600">
+            <legend className="field-label mb-0">Fields to improve</legend>
+            <p className="mb-4 mt-1 text-xs leading-5 text-zinc-500">
               Choose one or more. Your results will rank these by score and redirect your focus once you pass 80.
             </p>
             <div className="space-y-4">
@@ -106,12 +112,12 @@ export default function AddProjectModal({ initial, onConfirm, onClose }) {
                           type="button"
                           aria-pressed={selected}
                           onClick={() => toggleImprovementArea(option.value)}
-                          className={`relative min-h-24 rounded-xl border p-3 text-left transition-all ${selected ? "border-violet-400 bg-violet-500/10 shadow-[inset_0_0_0_1px_rgba(167,139,250,0.18)]" : "border-zinc-700 bg-zinc-950/40 hover:border-zinc-600"}`}
+                          className={`relative min-h-24 rounded-xl border p-3 text-left transition-[border-color,background-color,box-shadow] duration-150 ${selected ? "border-blue-600/60 bg-blue-500/10 shadow-[inset_0_0_0_1px_rgba(37,99,235,0.14)]" : "border-zinc-700 bg-zinc-950/40 hover:border-zinc-600 hover:bg-zinc-800/50"}`}
                         >
-                          <span className={`mb-2 flex h-7 w-7 items-center justify-center rounded-lg text-sm ${selected ? "bg-violet-400 text-zinc-950" : "bg-zinc-800 text-zinc-400"}`}>{option.icon}</span>
+                          <span className={`mb-2 flex h-7 w-7 items-center justify-center rounded-lg text-sm ${selected ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-400"}`}>{option.icon}</span>
                           <span className="block text-sm font-medium text-zinc-100">{option.label}</span>
                           <span className="mt-0.5 block text-[11px] leading-4 text-zinc-500">{option.detail}</span>
-                          <span className={`absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full border text-[11px] ${selected ? "border-violet-400 bg-violet-400 text-zinc-950" : "border-zinc-700 text-transparent"}`}>✓</span>
+                          <span className={`absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full border text-[11px] ${selected ? "border-blue-600 bg-blue-600 text-white" : "border-zinc-700 text-transparent"}`}>✓</span>
                         </button>
                       );
                     })}
@@ -119,41 +125,44 @@ export default function AddProjectModal({ initial, onConfirm, onClose }) {
                 </section>
               ))}
             </div>
-            {form.improvementAreas.length === 0 && <p role="alert" className="mt-2 text-xs text-amber-300">Select at least one field to continue.</p>}
+            {form.improvementAreas.length === 0 && <p role="alert" className="text-readiness mt-2 text-xs">Select at least one field to continue.</p>}
           </fieldset>
           <div>
-            <label className="block text-xs text-zinc-400 mb-1.5">Description</label>
+            <label className="field-label" htmlFor="project-description">Rehearsal goal</label>
             <textarea
+              id="project-description"
               rows={3}
-              placeholder="What is this project about?"
+              placeholder="What are you preparing for?"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-zinc-50 placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors resize-none"
+              className="field-control resize-none"
             />
           </div>
           <div>
-            <label className="block text-xs text-zinc-400 mb-1.5">Deadline</label>
+            <label className="field-label" htmlFor="project-deadline">Deadline</label>
             <input
+              id="project-deadline"
               type="date"
               value={form.deadline}
               onChange={(e) => setForm({ ...form, deadline: e.target.value })}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-zinc-50 focus:outline-none focus:border-violet-500 transition-colors"
+              className="field-control"
             />
           </div>
           <div className="flex gap-3 pt-1">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-600 text-sm transition-colors"
+              disabled={submitting}
+              className="btn-secondary flex-1"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={!form.name.trim() || form.improvementAreas.length === 0}
-              className="flex-1 rounded-lg bg-violet-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-violet-500 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500"
+              disabled={submitting || !form.name.trim() || form.improvementAreas.length === 0}
+              className="btn-primary flex-1"
             >
-              {initial ? "Save Changes" : "Create Project"}
+              {submitting ? "Saving…" : initial ? "Save Changes" : "Create Project"}
             </button>
           </div>
         </form>
