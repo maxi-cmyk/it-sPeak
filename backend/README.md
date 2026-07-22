@@ -9,16 +9,38 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Set `ITSPEAK_OPENAI_API_KEY`, then run Redis, the worker, and API from this folder:
+Set the required values in `.env`, including `ITSPEAK_OPENAI_API_KEY` for live
+transcription and generated coaching. Then start the complete backend from this
+folder with one command:
+
+```bash
+node ../scripts/run-backend.mjs
+```
+
+This starts and supervises FastAPI at `http://127.0.0.1:8000`, the Celery
+analysis worker, the Celery cleanup scheduler, and Redis in the same terminal.
+If the configured Redis instance is already running, it is reused. Otherwise,
+the command starts a local Redis process. Wait for `Application startup
+complete` and `celery@... ready` before using the app.
+
+Press `Ctrl+C` once to stop the complete backend. The supervisor stops the API,
+worker, scheduler, and any Redis process that it started; it does not stop a
+Redis instance that was already running.
+
+Node.js, `redis-server`, `redis-cli`, `ffmpeg`, and `ffprobe` must be available
+on `PATH`. The Python services are run through this folder's `.venv`.
+
+For service-specific debugging only, the components can still be started in
+separate terminals:
 
 ```bash
 redis-server
-celery -A itspeak.celery_app.celery_app worker --loglevel=info
-celery -A itspeak.celery_app.celery_app beat --loglevel=info
-uvicorn itspeak.api:app --reload
+.venv/bin/python -m celery -A itspeak.celery_app.celery_app worker --loglevel=info --pool=solo
+.venv/bin/python -m celery -A itspeak.celery_app.celery_app beat --loglevel=info
+.venv/bin/python -m uvicorn itspeak.api:app --reload
 ```
 
-`ffmpeg` and `ffprobe` must be available on PATH. The persistence API is:
+The persistence API is:
 
 - `GET/POST /projects` — list and create owned projects.
 - `GET/PATCH/DELETE /projects/{id}` — read, edit, or remove an owned project.
