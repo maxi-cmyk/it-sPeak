@@ -3,29 +3,26 @@ import argparse
 import contextlib
 import io
 import json
+import os
+import tempfile
 from pathlib import Path
 
-
-def disable_numba_cache_for_librosa():
-    try:
-        import numba
-    except ImportError:
-        return
-
-    for decorator_name in ("jit", "guvectorize", "vectorize"):
-        original_decorator = getattr(numba, decorator_name, None)
-        if original_decorator is None or getattr(original_decorator, "_it_speak_cache_disabled", False):
-            continue
-
-        def decorator_without_cache(*args, _original_decorator=original_decorator, **kwargs):
-            kwargs["cache"] = False
-            return _original_decorator(*args, **kwargs)
-
-        decorator_without_cache._it_speak_cache_disabled = True
-        setattr(numba, decorator_name, decorator_without_cache)
+def _configure_numba_cache() -> Path:
+    """Configure a writable Numba cache without changing numerical behavior."""
+    cache_dir = Path(
+        os.environ.setdefault(
+            "NUMBA_CACHE_DIR",
+            str(Path(tempfile.gettempdir()) / "itspeak-numba-cache"),
+        )
+    )
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir
 
 
-disable_numba_cache_for_librosa()
+# Configure the cache before importing Librosa/Numba. Production's entrypoint
+# points this at the persistent artifact volume; local tools and tests fall back
+# to the operating system's temporary directory.
+_numba_cache_dir = _configure_numba_cache()
 
 import librosa
 import numpy as np
