@@ -42,6 +42,13 @@ node_modules/
 .impeccable/
 .agents/skills/impeccable/
 
+# --- Local planning and agent workspace ---
+/.agents/
+/changes.md
+/DESIGN.md
+/nextSteps.md
+/PRODUCT.md
+
 # --- Supabase CLI local link state ---
 supabase/.temp/
 
