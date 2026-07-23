@@ -30,6 +30,95 @@ The complete defaults and calibration values are documented in `.env.example`. T
 
 FastAPI also accepts `ITSPEAK_CLERK_SECRET_KEY` and `ITSPEAK_CLERK_JWT_KEY` as aliases. Never expose the Clerk or Supabase secret through a frontend `NEXT_PUBLIC_*` variable.
 
+## Production container
+
+`Dockerfile` builds the Linux production image with Python 3.11, the locked
+Python dependencies, FFmpeg/ffprobe, and Supervisor. The container runs:
+
+- FastAPI on `0.0.0.0:$PORT`;
+- one Celery worker, with concurrency controlled by
+  `CELERY_WORKER_CONCURRENCY`;
+- one Celery Beat scheduler whose schedule is stored on the artifact volume.
+
+The entrypoint performs a production preflight before starting any process. It
+rejects local Redis/frontend URLs, missing Clerk, Supabase, or OpenAI
+credentials, a default temporary artifact directory, missing FFmpeg binaries,
+and an unwritable artifact mount.
+
+### Platform configuration
+
+Configure the container hosting service as follows:
+
+| Setting | Value |
+| --- | --- |
+| Repository branch | `main` |
+| Service/root directory | `backend/` |
+| Build method | Dockerfile |
+| Image architecture | `linux/amd64` |
+| Container port | Platform-provided `PORT` |
+| Health-check path | `/healthz` |
+| Persistent volume mount | `/data` |
+| Replica count | Exactly `1` |
+| Restart policy | Restart on failure |
+
+Use one container replica because FastAPI, Celery, and Beat share pending files
+under `ITSPEAK_ARTIFACT_DIR`. Horizontal replicas require replacing the
+temporary filesystem artifact store with shared object storage first.
+
+Create a managed Redis instance with persistence enabled. Do not run Redis in
+this application container. The existing late acknowledgements, lost-worker
+rejection, startup retries, and Redis visibility timeout allow an interrupted
+job to return to the queue after a normal worker restart; Redis persistence is
+still required to survive a Redis service restart.
+
+### Production environment variables
+
+Add these values through the hosting platform's secret/environment settings:
+
+| Variable | Required value |
+| --- | --- |
+| `ITSPEAK_ENVIRONMENT` | `production` |
+| `ITSPEAK_REDIS_URL` | Managed Redis `redis://` or `rediss://` connection URL |
+| `ITSPEAK_FRONTEND_ORIGIN` | Exact deployed frontend origin, with no path |
+| `ITSPEAK_ARTIFACT_DIR` | `/data/itspeak-sessions` |
+| `CLERK_SECRET_KEY` | Backend secret from the same Clerk instance as the frontend |
+| `CLERK_JWT_KEY` | Optional Clerk PEM public key; omit to use Clerk JWKS |
+| `ITSPEAK_SUPABASE_URL` | Supabase project URL |
+| `ITSPEAK_SUPABASE_SECRET_KEY` | Backend-only Supabase secret key |
+| `ITSPEAK_SUPABASE_STORAGE_BUCKET` | `session-artifacts` unless intentionally renamed |
+| `ITSPEAK_OPENAI_API_KEY` | OpenAI server API key |
+| `CELERY_WORKER_CONCURRENCY` | Start with `1` |
+
+The image provides safe defaults for `PORT`, FFmpeg paths, the artifact mount,
+and concurrency, but explicitly setting the deployment-specific values makes
+the platform configuration auditable. Never add real values to `.env.example`,
+the Dockerfile, or a committed platform manifest.
+
+### Build and smoke-test locally
+
+Build from the repository root:
+
+```bash
+docker build --platform linux/amd64 -t itspeak-backend ./backend
+```
+
+The explicit platform is required on Apple-silicon development machines because
+the pinned MediaPipe release does not publish a Linux ARM64 wheel. Common
+container hosting platforms build AMD64 images by default; select AMD64
+explicitly when the platform exposes an architecture setting.
+
+The production entrypoint intentionally refuses to start without real external
+service configuration. After deploying, verify:
+
+```bash
+curl --fail https://YOUR_BACKEND_HOST/healthz
+```
+
+Then check platform logs for `Application startup complete`, a Celery
+`ready` message, and the Beat scheduler startup. Submit an authenticated video,
+wait for persisted results, restart the application service, and repeat the
+upload to satisfy the restart portion of the deployment gate.
+
 ## Run the complete backend
 
 Start FastAPI, the Celery worker, Celery Beat, and Redis in one terminal:

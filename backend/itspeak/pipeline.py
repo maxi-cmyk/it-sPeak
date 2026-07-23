@@ -380,8 +380,6 @@ def analyze_frames_with_artifacts(batch: FrameBatch) -> tuple[VideoAnalysisResul
         warnings.append("Face metrics are low-confidence because detection was intermittent.")
     if body.frames_with_pose / batch.count < get_settings().min_valid_frame_ratio:
         warnings.append("Body metrics are low-confidence because shoulders/hips were not consistently visible.")
-    if body.spatial_use is not None:
-        warnings.append("Spatial-use scoring assumes a stationary camera.")
     analysis = VideoAnalysisResult(face=face, body=body, frames_analyzed=batch.count, sample_fps=batch.fps, duration_seconds=batch.duration_seconds, metric_confidence={"eye_contact": _metric_confidence(face.frames_with_face, batch.count), "smile_naturalness": face.smile_confidence, "movement_purposefulness": body.movement_confidence, "spatial_use": body.spatial_confidence}, warnings=warnings)
     artifact = {"version": "1.0", "coordinate_encoding": "uint16_normalized_xy", "visibility_encoding": "uint8", "sample_fps": batch.fps, "duration_seconds": batch.duration_seconds, "source": {"width": batch.source_width, "height": batch.source_height}, "frames": frames}
     return analysis, artifact
