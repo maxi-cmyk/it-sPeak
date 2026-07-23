@@ -6,7 +6,7 @@ Users create a rehearsal project, choose vocal and visual improvement areas, and
 
 ## Demo
 
-> **Demo video:** [Watch the it'sPEAK demo](DEMO_VIDEO_URL) — replace `DEMO_VIDEO_URL` when the public recording is available.
+> **Demo video:** [Watch the it'sPEAK demo](https://youtu.be/p2i9zemDgSw) 
 
 ## What the application provides
 
