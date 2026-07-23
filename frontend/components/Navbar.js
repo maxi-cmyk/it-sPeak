@@ -17,8 +17,7 @@ export default function Navbar({ backHref }) {
               </svg>
             </button>
           )}
-          <span className="h-2 w-2 rounded-sm bg-blue-500 opacity-85" aria-hidden="true" />
-          <Link href="/" className="hover-accent rounded-md text-xl font-bold tracking-tight text-zinc-50 transition-colors">
+          <Link href="/" className="rounded-md text-xl font-bold tracking-tight text-zinc-50">
             it's<span className="text-accent">PEAK</span>
           </Link>
         </div>
@@ -29,7 +28,7 @@ export default function Navbar({ backHref }) {
               <button className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-zinc-50">Sign in</button>
             </SignInButton>
             <SignUpButton>
-              <button className="btn-primary min-h-9 px-3 py-1.5">Sign up</button>
+              <button className="btn-primary min-h-9 px-3 py-2">Sign up</button>
             </SignUpButton>
           </Show>
           <Show when="signed-in"><UserButton /></Show>

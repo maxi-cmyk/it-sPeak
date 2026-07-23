@@ -18,7 +18,7 @@ export default function AllSessionsModal({ sessions, projectId, onClose, onAddSe
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
+        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
           {sessions.length === 0 ? (
             <p className="py-8 text-center text-sm leading-6 text-zinc-500">No sessions yet.</p>
           ) : (
@@ -36,7 +36,7 @@ export default function AllSessionsModal({ sessions, projectId, onClose, onAddSe
           )}
         </div>
 
-        <div className="p-5 border-t border-zinc-800">
+        <div className="p-6 border-t border-zinc-800">
           <button
             onClick={onAddSession}
             className="btn-primary w-full"

@@ -1,8 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
 import { improvementAreaGroups, improvementAreaValues } from "@/lib/improvementAreas.mjs";
-import useApi from "@/hooks/useApi";
 import ImprovementAreaIcon from "@/components/ImprovementAreaIcon";
+import useApi from "@/hooks/useApi";
+
+const MAX_DESCRIPTION_WORDS = 100;
+const countWords = (text) => (text.trim() ? text.trim().split(/\s+/).length : 0);
 
 export default function AddProjectModal({ initial, onConfirm, onClose, submitting = false, submitError = null }) {
   const { authReady, listArchetypes } = useApi();
@@ -32,9 +35,12 @@ export default function AddProjectModal({ initial, onConfirm, onClose, submittin
     }));
   };
 
+  const descriptionWordCount = countWords(form.description);
+  const descriptionTooLong = descriptionWordCount > MAX_DESCRIPTION_WORDS;
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (submitting || !form.name.trim() || form.improvementAreas.length === 0) return;
+    if (submitting || !form.name.trim() || form.improvementAreas.length === 0 || descriptionTooLong) return;
     onConfirm(form);
   };
 
@@ -55,7 +61,7 @@ export default function AddProjectModal({ initial, onConfirm, onClose, submittin
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {submitError && (
-            <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-sm text-red-700">
+            <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-3 text-sm text-red-700">
               Project changes could not be saved. {submitError}
             </div>
           )}
@@ -140,7 +146,10 @@ export default function AddProjectModal({ initial, onConfirm, onClose, submittin
             {form.improvementAreas.length === 0 && <p role="alert" className="text-readiness mt-2 text-xs">Select at least one field to continue.</p>}
           </fieldset>
           <div>
-            <label className="field-label" htmlFor="project-description">Project description</label>
+            <div className="flex items-baseline justify-between">
+              <label className="field-label" htmlFor="project-description">Rehearsal goal</label>
+              <span className={`text-xs ${descriptionTooLong ? "text-warning" : "text-zinc-500"}`}>{descriptionWordCount}/{MAX_DESCRIPTION_WORDS} words</span>
+            </div>
             <textarea
               id="project-description"
               rows={3}
@@ -148,7 +157,9 @@ export default function AddProjectModal({ initial, onConfirm, onClose, submittin
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               className="field-control resize-none"
+              aria-invalid={descriptionTooLong}
             />
+            {descriptionTooLong && <p role="alert" className="text-warning mt-2 text-xs">Keep your rehearsal goal under {MAX_DESCRIPTION_WORDS} words.</p>}
           </div>
           <div>
             <label className="field-label" htmlFor="project-deadline">Deadline</label>
@@ -160,7 +171,7 @@ export default function AddProjectModal({ initial, onConfirm, onClose, submittin
               className="field-control date-control"
             />
           </div>
-          <div className="flex gap-3 pt-1">
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}
@@ -171,7 +182,7 @@ export default function AddProjectModal({ initial, onConfirm, onClose, submittin
             </button>
             <button
               type="submit"
-              disabled={submitting || !form.name.trim() || form.improvementAreas.length === 0}
+              disabled={submitting || !form.name.trim() || form.improvementAreas.length === 0 || descriptionTooLong}
               className="btn-primary flex-1"
             >
               {submitting ? "Saving…" : initial ? "Save changes" : "Create project"}

@@ -3,6 +3,11 @@ import { improvementAreaLabels, improvementAreaModuleByValue, improvementAreaVal
 export const COACHING_THRESHOLD = 80;
 const OUTSIDE_TARGET_SCORE_CAP = COACHING_THRESHOLD - 1;
 
+const formatTimestamp = (seconds) => {
+  const total = Math.max(0, Math.round(seconds));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+};
+
 const averageAvailable = (...values) => {
   const available = values.filter((value) => Number.isFinite(value));
   return available.length ? Math.round(available.reduce((sum, value) => sum + value, 0) / available.length) : null;
@@ -69,6 +74,11 @@ function nonProficientMessage(area, score, report) {
     return `${fillerObservation(fillers)} flagged (${fillers.label.toLowerCase()}). The target is ${fillers.target_range}.${fillerExamplesText(fillers, report)} ${fillers.meaning}`;
   }
   if (area === "eye_contact" && Number.isFinite(face.eye_contact_ratio)) {
+    const lapseStart = face.worst_eye_contact_lapse_start;
+    const lapseEnd = face.worst_eye_contact_lapse_end;
+    if (Number.isFinite(lapseStart) && Number.isFinite(lapseEnd) && lapseEnd - lapseStart >= 2) {
+      return `You held eye contact for ${Math.round(face.eye_contact_ratio * 100)}% of tracked frames. Your longest lapse ran from ${formatTimestamp(lapseStart)} to ${formatTimestamp(lapseEnd)}, where your gaze drifted off camera — bringing it back during that stretch is the fastest way to strengthen audience connection.`;
+    }
     return `You held eye contact for ${Math.round(face.eye_contact_ratio * 100)}% of tracked frames — building toward sustained camera connection will strengthen audience trust.`;
   }
   if (area === "facial_expression" && Number.isFinite(face.expression_variance)) {
@@ -184,8 +194,8 @@ export function reportToSession(report, sessionId, projectId = "1", qualityGate 
     ["audio", "face", "body"].map((module) => [module, Math.min(...improvementGuidance.filter((item) => improvementAreaModuleByValue[item.area] === module && !item.proficient).map((item) => item.priority), 99)]),
   );
   const feedback = [
-    ...report.cards.map((card) => ({ module: card.module, icon: card.module === "face" ? "◉" : "↗", text: card.problem, tip: card.actionable_fix })),
-    ...report.audio.actionable_coaching_cards.map((card) => ({ module: "audio", icon: "◌", text: card, tip: "Rehearse this in your next session." })),
+    ...report.cards.map((card) => ({ module: card.module, text: card.problem, tip: card.actionable_fix })),
+    ...report.audio.actionable_coaching_cards.map((card) => ({ module: "audio", text: card, tip: "Rehearse this in your next session." })),
   ]
     .filter((item) => activeModules.has(item.module))
     .sort((left, right) => priorityByModule[left.module] - priorityByModule[right.module])

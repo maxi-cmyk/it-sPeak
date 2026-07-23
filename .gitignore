@@ -69,3 +69,4 @@ backend/celerybeat-schedule*
 backend/itspeak-sessions/
 *.log
 *.pid
+.run/

@@ -171,6 +171,24 @@ def _metric_confidence(valid: int, total: int) -> MetricConfidence:
     return MetricConfidence.HIGH if ratio >= 0.8 else MetricConfidence.MEDIUM if ratio >= 0.55 else MetricConfidence.LOW if ratio >= 0.3 else MetricConfidence.INSUFFICIENT
 
 
+def _worst_eye_contact_lapse(rows: list[dict], fps: float) -> tuple[float | None, float | None]:
+    """Longest continuous stretch where the speaker looked away from camera."""
+    worst_start, worst_end = None, None
+    run_start, state = None, None
+    for row in rows:
+        current = row["eye_contact"]
+        if current != state:
+            if state == EyeContactState.AWAY.value and run_start is not None:
+                if worst_start is None or row["t"] - run_start > worst_end - worst_start:
+                    worst_start, worst_end = run_start, row["t"]
+            state, run_start = current, row["t"]
+    if state == EyeContactState.AWAY.value and run_start is not None and rows:
+        end = rows[-1]["t"] + (1 / fps if fps else 0)
+        if worst_start is None or end - run_start > worst_end - worst_start:
+            worst_start, worst_end = run_start, end
+    return worst_start, worst_end
+
+
 def _face_analysis(batch: FrameBatch):
     import mediapipe as mp
 
@@ -249,7 +267,8 @@ def _face_analysis(batch: FrameBatch):
         expr_score = float(np.clip(np.mean(np.std(np.asarray(expression), axis=0)) * 18, 0, 1))
     stability = 0.0 if not noses else float(np.clip(1 - np.mean(np.std(np.asarray(noses), axis=0)) * 12, 0, 1))
     confidence = _metric_confidence(len(suitable_rows), batch.count)
-    metrics = FaceMetrics(eye_contact_ratio=gaze_hits / face_count if face_count else 0, expression_variance=expr_score, head_stability=stability, au6_proxy=au6, au12_proxy=au12, smile_naturalness_proxy=natural, smile_confidence=confidence, frames_with_face=face_count)
+    lapse_start, lapse_end = _worst_eye_contact_lapse(artifact, batch.fps)
+    metrics = FaceMetrics(eye_contact_ratio=gaze_hits / face_count if face_count else 0, expression_variance=expr_score, head_stability=stability, au6_proxy=au6, au12_proxy=au12, smile_naturalness_proxy=natural, smile_confidence=confidence, frames_with_face=face_count, worst_eye_contact_lapse_start=lapse_start, worst_eye_contact_lapse_end=lapse_end)
     return metrics, artifact
 
 

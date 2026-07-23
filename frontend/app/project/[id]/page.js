@@ -29,6 +29,7 @@ export default function ProjectPage() {
   const [sessions, setSessions] = useState([]);
   const [error, setError] = useState(null);
   const [editState, setEditState] = useState({ saving: false, error: null });
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const load = async () => {
     try {

@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import ImprovementAreaIcon from "@/components/ImprovementAreaIcon";
 import Navbar from "@/components/Navbar";
 import RatingBar from "@/components/RatingBar";
 import ScoreRing from "@/components/ScoreRing";
@@ -21,6 +22,12 @@ function MetricText({ children }) {
       ? <strong key={`${part.text}-${index}`} className="font-bold text-inherit">{part.text}</strong>
       : <span key={`${part.text}-${index}`}>{part.text}</span>
   ));
+}
+
+function stripPriorityPrefix(text) {
+  if (typeof text !== "string") return text;
+  const stripped = text.replace(/^priority\s*\d+\s*:\s*/i, "");
+  return stripped === text ? text : stripped.charAt(0).toUpperCase() + stripped.slice(1);
 }
 
 export default function SessionSummaryPage() {
@@ -129,7 +136,7 @@ export default function SessionSummaryPage() {
                       <span className="text-sm font-semibold text-zinc-300">Priority {item.priority} <span className="text-zinc-500" aria-hidden="true">·</span> {improvementAreaLabels[item.area] || item.area}</span>
                       <span className={`text-lg font-semibold ${item.priority === 1 ? "text-readiness" : "text-zinc-200"}`}>{Math.round(item.score)}<span className="text-xs font-normal text-zinc-400">/100</span></span>
                     </div>
-                    <p className="mt-1 text-sm leading-6 text-zinc-300"><MetricText>{item.message}</MetricText></p>
+                    <p className="mt-1 text-sm leading-6 text-zinc-300"><MetricText>{stripPriorityPrefix(item.message)}</MetricText></p>
                   </div>
                 ))}
               </div>
@@ -144,7 +151,7 @@ export default function SessionSummaryPage() {
                       <span className="text-sm font-semibold text-zinc-300">{improvementAreaLabels[item.area] || item.area}</span>
                       <span className="text-lg font-semibold text-emerald-700">{Math.round(item.score)}<span className="text-xs font-normal text-zinc-400">/100</span></span>
                     </div>
-                    <p className="mt-1 text-sm leading-6 text-zinc-300"><MetricText>{item.message}</MetricText></p>
+                    <p className="mt-1 text-sm leading-6 text-zinc-300"><MetricText>{stripPriorityPrefix(item.message)}</MetricText></p>
                   </div>
                 ))}
               </div>
@@ -158,12 +165,12 @@ export default function SessionSummaryPage() {
             <div className="flex flex-col gap-4">
               {selectedNeedsWork.length > 0 && session.feedback.length === 0 && <p className="text-sm leading-6 text-zinc-400">Your selected areas needing work are detailed above. No additional coaching card was generated for this analysis.</p>}
               {session.feedback.map((item, index) => (
-                <div key={`${item.text}-${index}`} className="flex gap-3">
-                  <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-blue-400" aria-hidden="true" />
-                  <div>
+                <div key={`${item.text}-${index}`}>
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center text-zinc-200"><ImprovementAreaIcon area={item.module} /></span>
                     <p className="text-sm font-medium text-zinc-200"><MetricText>{item.text}</MetricText></p>
-                    <p className="mt-1 text-sm leading-6 text-zinc-400"><span aria-hidden="true">→</span> <MetricText>{item.tip}</MetricText></p>
                   </div>
+                  <p className="text-xs text-zinc-500 mt-0.5 pl-8">→ <MetricText>{item.tip}</MetricText></p>
                 </div>
               ))}
               {observedFeedback.length > 0 && (
@@ -172,12 +179,12 @@ export default function SessionSummaryPage() {
                   <p className="mb-4 text-sm leading-6 text-zinc-400">These were not selected as project focuses, but they scored below {COACHING_THRESHOLD}/100.</p>
                   <div className="flex flex-col gap-4">
                     {observedFeedback.map((item) => (
-                      <div key={item.area} className="flex gap-3">
-                        <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-zinc-600" aria-hidden="true" />
-                        <div>
+                      <div key={item.area}>
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center text-zinc-200"><ImprovementAreaIcon area={item.module} /></span>
                           <p className="text-sm font-medium text-zinc-200"><MetricText>{item.text}</MetricText></p>
-                          <p className="mt-1 text-sm leading-6 text-zinc-400"><span aria-hidden="true">→</span> <MetricText>{item.tip}</MetricText></p>
                         </div>
+                        <p className="mt-0.5 pl-8 text-xs leading-5 text-zinc-500">→ <MetricText>{item.tip}</MetricText></p>
                       </div>
                     ))}
                   </div>

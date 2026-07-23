@@ -63,6 +63,11 @@ def _aggregates(report: CoachingReport) -> dict[str, float | None]:
     return {"overall_score": _average([face, body, vocal]), "vocal_score": vocal, "face_score": face, "body_score": body}
 
 
+def _format_timestamp(seconds: float) -> str:
+    total = max(0, round(seconds))
+    return f"{total // 60}:{total % 60:02d}"
+
+
 def _filler_observation(fillers: dict) -> str:
     rate = fillers.get("rate_per_100_words")
     if rate is None:
@@ -95,6 +100,13 @@ def _non_proficient_message(area: ImprovementArea, score: float, report: Coachin
     if area == ImprovementArea.FILLER_WORDS and fillers:
         return f"{_filler_observation(fillers)} flagged ({fillers['label'].lower()}). The target is {fillers['target_range']}.{_filler_examples(fillers)} {fillers['meaning']}"
     if area == ImprovementArea.EYE_CONTACT:
+        lapse_start, lapse_end = face.worst_eye_contact_lapse_start, face.worst_eye_contact_lapse_end
+        if lapse_start is not None and lapse_end is not None and lapse_end - lapse_start >= 2:
+            return (
+                f"You held eye contact for {face.eye_contact_ratio * 100:.0f}% of tracked frames. Your longest lapse ran from "
+                f"{_format_timestamp(lapse_start)} to {_format_timestamp(lapse_end)}, where your gaze drifted off camera — "
+                "bringing it back during that stretch is the fastest way to strengthen audience connection."
+            )
         return f"You held eye contact for {face.eye_contact_ratio * 100:.0f}% of tracked frames — building toward sustained camera connection will strengthen audience trust."
     if area == ImprovementArea.FACIAL_EXPRESSION:
         return f"Facial expression variance measured {face.expression_variance * 100:.0f}% — more visible range will help your key moments land."
