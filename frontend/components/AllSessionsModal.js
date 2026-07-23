@@ -9,7 +9,7 @@ export default function AllSessionsModal({ sessions, projectId, onClose, onAddSe
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="sessions-dialog-title">
       <div className="modal-backdrop" onClick={onClose} />
       <div className="modal-panel flex max-h-[80vh] max-w-lg flex-col p-0">
-        <div className="flex items-center justify-between p-5 border-b border-zinc-800">
+        <div className="flex items-center justify-between p-6 border-b border-zinc-800">
           <div><p className="page-kicker mb-1">Rehearsal history</p><h2 id="sessions-dialog-title" className="text-lg font-semibold text-zinc-50">Retained sessions</h2></div>
           <button onClick={onClose} className="icon-button -mr-2" aria-label="Close retained sessions">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -18,7 +18,7 @@ export default function AllSessionsModal({ sessions, projectId, onClose, onAddSe
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
+        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
           {sessions.length === 0 ? (
             <p className="py-8 text-center text-sm leading-6 text-zinc-500">No successful sessions have been retained yet.</p>
           ) : (
@@ -36,7 +36,7 @@ export default function AllSessionsModal({ sessions, projectId, onClose, onAddSe
           )}
         </div>
 
-        <div className="p-5 border-t border-zinc-800">
+        <div className="p-6 border-t border-zinc-800">
           <button
             onClick={onAddSession}
             className="btn-primary w-full"

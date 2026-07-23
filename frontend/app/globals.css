@@ -106,7 +106,7 @@ select {
   }
 
   .page-header {
-    @apply mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between;
+    @apply mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between;
   }
 
   .page-kicker {
@@ -119,7 +119,7 @@ select {
   }
 
   .page-summary {
-    @apply mt-1 max-w-2xl text-sm leading-6 text-zinc-400;
+    @apply mt-3 max-w-2xl text-sm leading-6 text-zinc-400;
   }
 
   .section-label {
@@ -127,23 +127,23 @@ select {
   }
 
   .surface-card {
-    @apply rounded-xl border border-zinc-800 bg-zinc-900 p-5;
+    @apply rounded-xl border border-zinc-800 bg-zinc-900 p-6;
   }
 
   .surface-card-interactive {
-    @apply rounded-xl border border-zinc-800 bg-zinc-900 p-5 transition-[border-color,background-color,box-shadow] duration-150 hover:border-zinc-600;
+    @apply rounded-xl border border-zinc-800 bg-zinc-900 p-6 transition-[border-color,background-color,box-shadow] duration-150 hover:border-zinc-600;
   }
 
   .btn-primary {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-[background-color,transform] duration-150 hover:bg-blue-700 active:translate-y-px disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500;
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-[background-color,transform] duration-150 hover:bg-blue-700 active:translate-y-px disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500;
   }
 
   .btn-secondary {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm font-medium text-zinc-300 transition-colors duration-150 hover:border-zinc-600 hover:bg-zinc-700 hover:text-zinc-50 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors duration-150 hover:border-zinc-600 hover:bg-zinc-700 hover:text-zinc-50 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-quiet {
-    @apply inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors duration-150 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100;
+    @apply inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-400 transition-colors duration-150 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100;
   }
 
   .icon-button {
@@ -226,15 +226,15 @@ select {
   }
 
   .field-label {
-    @apply mb-1.5 block text-xs font-semibold text-zinc-400;
+    @apply mb-2 block text-xs font-semibold text-zinc-400;
   }
 
   .field-control {
-    @apply w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-50 placeholder:text-zinc-500 transition-colors duration-150 hover:border-zinc-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30;
+    @apply w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 transition-colors duration-150 hover:border-zinc-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30;
   }
 
   .chip {
-    @apply inline-flex items-center rounded-full border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-300 transition-colors duration-150 hover:border-zinc-600 hover:text-zinc-50;
+    @apply inline-flex items-center rounded-full border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs font-semibold text-zinc-300 transition-colors duration-150 hover:border-zinc-600 hover:text-zinc-50;
   }
 
   .chip-selected {

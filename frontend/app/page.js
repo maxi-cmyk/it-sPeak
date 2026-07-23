@@ -44,16 +44,16 @@ export default function Dashboard() {
             New project
           </button>
         </header>
-        {state.error && <div role="alert" className="status-panel mb-6 border-red-500/30 bg-red-500/10 text-red-700"><p className="font-medium">Projects could not be loaded.</p><p className="mt-1 text-xs text-red-700">{state.error}</p><button onClick={load} className="btn-quiet mt-3 border-red-500/40 text-red-700 hover:bg-red-500/10">Try again</button></div>}
+        {state.error && <div role="alert" className="status-panel mb-6 border-red-500/30 bg-red-500/10 text-red-700"><p className="font-medium">Projects could not be loaded.</p><p className="mt-1 text-xs text-red-700">{state.error}</p><button onClick={load} className="btn-quiet mt-4 border-red-500/40 text-red-700 hover:bg-red-500/10">Try again</button></div>}
         {state.loading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading projects">{[0,1,2].map((item) => <div key={item} className="h-52 animate-pulse rounded-xl border border-zinc-800 bg-zinc-900" />)}</div>
         ) : projects.length === 0 ? (
           <section className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-800 px-6 py-20 text-center">
-            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-400">
+            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-400">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5M8 16h3"/></svg>
             </div>
             <h2 className="text-base font-semibold text-zinc-200">Set up your first rehearsal project</h2>
-            <p className="mt-2 max-w-md text-sm leading-6 text-zinc-500">Choose the speaking areas you want to improve. Your first successful analysis becomes the protected baseline.</p>
+            <p className="mt-3 max-w-md text-sm leading-6 text-zinc-500">Choose the speaking areas you want to improve. Your first successful analysis becomes the protected baseline.</p>
             <button onClick={() => setModal("add")} className="btn-primary mt-6">Create first project</button>
           </section>
         ) : (

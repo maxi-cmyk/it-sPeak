@@ -20,7 +20,7 @@ export default function AddSessionModal({ onClose, onConfirm }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="session-dialog-title">
       <div className="modal-backdrop" onClick={onClose} />
       <div className="modal-panel max-w-md">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-6">
           <div><p className="page-kicker mb-1">New rehearsal</p><h2 id="session-dialog-title" className="text-lg font-semibold text-zinc-50">Upload your recording</h2></div>
           <button onClick={onClose} className="icon-button -mr-2" aria-label="Close upload dialog">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -66,7 +66,7 @@ export default function AddSessionModal({ onClose, onConfirm }) {
           )}
         </label>
 
-        <div className="flex gap-3 mt-5">
+        <div className="flex gap-3 mt-6">
           <button
             onClick={onClose}
             className="btn-secondary flex-1"

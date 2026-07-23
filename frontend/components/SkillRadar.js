@@ -10,8 +10,8 @@ import {
 
 export default function SkillRadar({ data }) {
   return (
-    <ResponsiveContainer width="100%" height={260}>
-      <RadarChart data={data} outerRadius="68%" margin={{ top: 10, right: 48, bottom: 10, left: 48 }}>
+    <ResponsiveContainer width="100%" height="100%" minHeight={280}>
+      <RadarChart data={data} outerRadius="80%" margin={{ top: 10, right: 32, bottom: 10, left: 32 }}>
         <PolarGrid stroke="var(--border-strong)" />
         <PolarAngleAxis
           dataKey="subject"

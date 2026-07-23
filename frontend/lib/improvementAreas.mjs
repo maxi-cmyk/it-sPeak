@@ -4,9 +4,9 @@ export const improvementAreaGroups = [
     label: "Audio delivery",
     detail: "How your voice carries the message",
     options: [
-      { value: "pacing", label: "Pacing", detail: "Speaking rate and rhythm", icon: "◷" },
-      { value: "intonation", label: "Vocab variety", detail: "Pitch range and emphasis", icon: "⌁" },
-      { value: "filler_words", label: "Filler words", detail: "Clean, intentional phrasing", icon: "···" },
+      { value: "pacing", label: "Pacing", detail: "Speaking rate and rhythm" },
+      { value: "intonation", label: "Vocab variety", detail: "Pitch range and emphasis" },
+      { value: "filler_words", label: "Filler words", detail: "Clean, intentional phrasing" },
     ],
   },
   {
@@ -14,10 +14,10 @@ export const improvementAreaGroups = [
     label: "Visual delivery",
     detail: "How you appear and move on camera",
     options: [
-      { value: "eye_contact", label: "Eye contact", detail: "Audience and camera connection", icon: "◉" },
-      { value: "facial_expression", label: "Facial expressions", detail: "Visible emphasis and variation", icon: "⌒" },
-      { value: "posture", label: "Posture", detail: "Upright, grounded alignment", icon: "↥" },
-      { value: "gestures", label: "Gestures", detail: "Purposeful range and openness", icon: "↗" },
+      { value: "eye_contact", label: "Eye contact", detail: "Audience and camera connection" },
+      { value: "facial_expression", label: "Facial expressions", detail: "Visible emphasis and variation" },
+      { value: "posture", label: "Posture", detail: "Upright, grounded alignment" },
+      { value: "gestures", label: "Gestures", detail: "Purposeful range and openness" },
     ],
   },
 ];

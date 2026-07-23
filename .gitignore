@@ -48,3 +48,4 @@ supabase/.temp/
 # --- Local runtime state ---
 backend/celerybeat-schedule*
 backend/itspeak-sessions/
+.run/

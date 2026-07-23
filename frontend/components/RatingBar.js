@@ -7,7 +7,6 @@ export default function RatingBar({ label, value, target }) {
         <div className="flex items-center gap-2">
           <span className="font-semibold text-zinc-50">{value}</span>
           <span className="text-zinc-600 text-xs">/ 100</span>
-          {target && <span className="text-zinc-600 text-[10px]">(target {target})</span>}
         </div>
       </div>
       <div className="relative h-2 overflow-hidden rounded-full bg-zinc-800" role="meter" aria-label={`${label} score`} aria-valuemin="0" aria-valuemax="100" aria-valuenow={value}>

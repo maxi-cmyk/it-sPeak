@@ -123,6 +123,8 @@ class FaceMetrics(BaseModel):
     smile_naturalness_proxy: Optional[float] = Field(None, ge=0.0, le=1.0)
     smile_confidence: MetricConfidence = MetricConfidence.INSUFFICIENT
     frames_with_face: int = Field(0, ge=0)
+    worst_eye_contact_lapse_start: Optional[float] = None
+    worst_eye_contact_lapse_end: Optional[float] = None
 
 
 class BodyMetrics(BaseModel):

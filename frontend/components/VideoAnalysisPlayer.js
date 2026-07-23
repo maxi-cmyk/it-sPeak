@@ -70,7 +70,7 @@ export default function VideoAnalysisPlayer({ sessionId, analysis, qualityGate }
   return (
     <section className="surface-card mb-6">
       <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-        <div><p className="page-kicker mb-1">Frame-by-frame evidence</p><p className="text-xs text-zinc-500">Toggle only the overlays you need while reviewing the recording.</p></div>
+        <div><p className="page-kicker mb-1">Frame-by-frame analysis</p><p className="text-xs text-zinc-500">Toggle only the overlays you need while reviewing the recording.</p></div>
         <div className="flex flex-wrap gap-2" aria-label="Overlay controls">{Object.entries({ face: "Facial expressions", skeleton: "Skeleton", eye: "Eye contact" }).map(([key, label]) => <button key={key} aria-pressed={toggles[key]} onClick={() => setToggles((current) => ({ ...current, [key]: !current[key] }))} className={`chip ${toggles[key] ? "chip-selected" : ""}`}>{label}</button>)}</div>
       </div>
       <div className="relative overflow-hidden rounded-xl bg-black aspect-video">

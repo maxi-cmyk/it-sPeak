@@ -13,8 +13,10 @@ export default function SessionCard({ session, onClick, prev }) {
           <div className="flex flex-col items-center w-12">
             <span className={`text-2xl font-bold ${session.score >= 80 ? "text-emerald-700" : session.score >= 60 ? "text-accent" : "text-red-700"}`}>{session.score}</span>
             {improved !== null && (
-              <span className={`text-xs font-medium ${improved ? "text-emerald-700" : "text-red-700"}`}>
-                {improved ? "Improved" : "Lower"}
+              <span className={improved ? "text-emerald-700" : "text-red-700"} role="img" aria-label={improved ? "Improved" : "Lower"} title={improved ? "Improved" : "Lower"}>
+                <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+                  {improved ? <polygon points="5,0 10,10 0,10" fill="currentColor" /> : <polygon points="0,0 10,0 5,10" fill="currentColor" />}
+                </svg>
               </span>
             )}
           </div>
