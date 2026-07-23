@@ -109,6 +109,10 @@ select {
     @apply mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between;
   }
 
+  .archive-header {
+    @apply mb-8 flex flex-col gap-5 border-b border-zinc-800 pb-6 sm:flex-row sm:items-center sm:justify-between;
+  }
+
   .page-kicker {
     @apply mb-2 text-xs font-semibold uppercase tracking-[0.22em];
     color: var(--performance-cobalt-text);
@@ -147,7 +151,7 @@ select {
   }
 
   .icon-button {
-    @apply inline-flex h-9 w-9 items-center justify-center rounded-lg text-zinc-500 transition-colors duration-150 hover:bg-zinc-800 hover:text-zinc-100;
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-lg text-zinc-500 transition-colors duration-150 hover:bg-zinc-800 hover:text-zinc-100;
   }
 
   .theme-toggle {
@@ -175,15 +179,19 @@ select {
     position: relative;
     z-index: 1;
     display: grid;
-    width: 1rem;
-    height: 1rem;
+    width: 1.125rem;
+    height: 1.125rem;
     place-items: center;
     transition: opacity 150ms ease-out;
   }
 
   .theme-toggle__icon svg {
-    width: 1rem;
-    height: 1rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  .theme-toggle__sun {
+    color: var(--readiness-amber);
   }
 
   .theme-toggle__moon {
@@ -203,9 +211,9 @@ select {
   }
 
   :root[data-theme="dark"] .theme-toggle {
-    border-color: var(--surface);
-    background: var(--canvas);
-    color: var(--surface);
+    border-color: var(--text-muted);
+    background: var(--surface);
+    color: var(--performance-cobalt-soft);
   }
 
   :root[data-theme="dark"] .theme-toggle:hover {
@@ -222,7 +230,7 @@ select {
 
   :root[data-theme="dark"] .theme-toggle__thumb {
     right: calc(100% - 1.8125rem);
-    background: var(--surface);
+    background: var(--text-primary);
   }
 
   .field-label {
@@ -231,6 +239,30 @@ select {
 
   .field-control {
     @apply w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-50 placeholder:text-zinc-500 transition-colors duration-150 hover:border-zinc-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30;
+  }
+
+  .date-control {
+    min-height: 3rem;
+    color-scheme: light;
+  }
+
+  :root[data-theme="dark"] .date-control {
+    color-scheme: dark;
+  }
+
+  .date-control::-webkit-calendar-picker-indicator {
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0.25rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: background-color 150ms ease, opacity 150ms ease;
+  }
+
+  .date-control::-webkit-calendar-picker-indicator:hover {
+    background-color: rgb(var(--zinc-700-rgb) / 0.35);
+    opacity: 1;
   }
 
   .chip {

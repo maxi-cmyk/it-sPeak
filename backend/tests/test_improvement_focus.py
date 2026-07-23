@@ -53,7 +53,7 @@ class ImprovementFocusTest(unittest.TestCase):
         self.assertEqual([item.area for item in report.improvement_guidance], [ImprovementArea.PACING, ImprovementArea.POSTURE, ImprovementArea.EYE_CONTACT])
         self.assertEqual([item.priority for item in report.improvement_guidance], [1, 2, 3])
         self.assertTrue(report.improvement_guidance[-1].proficient)
-        self.assertIn("Prioritise Pacing", report.improvement_guidance[-1].message)
+        self.assertNotIn("Prioritise", report.improvement_guidance[-1].message)
         self.assertEqual([card.module for card in report.cards], [Module.BODY])
         self.assertEqual(len(report.audio.actionable_coaching_cards), 1)
 
@@ -65,7 +65,31 @@ class ImprovementFocusTest(unittest.TestCase):
 
         self.assertEqual(report.cards, [])
         self.assertEqual(report.audio.actionable_coaching_cards, [])
-        self.assertIn("select another area", report.improvement_guidance[0].message)
+        self.assertNotIn("select another area", report.improvement_guidance[0].message)
+
+    def test_proficient_eye_contact_names_the_normalized_threshold(self):
+        report = _apply_improvement_focus(
+            make_report([ImprovementArea.EYE_CONTACT]),
+            {"vocal_score": 55, "face_score": 85, "body_score": 70},
+        )
+
+        self.assertIn("85/100 against the 80/100 coaching threshold", report.improvement_guidance[0].message)
+
+    def test_filler_feedback_names_at_most_three_examples(self):
+        source = make_report([ImprovementArea.FILLER_WORDS])
+        source.audio.readable_metrics["fillers"] = {
+            "value": 5,
+            "rate_per_100_words": 5.0,
+            "label": "Some fillers",
+            "target_range": "0-2 per 100 words",
+            "examples": ["um", "like", "so", "actually"],
+            "meaning": "They are noticeable.",
+        }
+
+        report = _apply_improvement_focus(source)
+
+        self.assertIn("Examples: “um”, “like”, and “so”.", report.improvement_guidance[0].message)
+        self.assertNotIn("actually", report.improvement_guidance[0].message)
 
     def test_threshold_score_is_proficient_and_gets_no_coaching(self):
         source = make_report([ImprovementArea.PACING])

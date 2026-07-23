@@ -27,7 +27,7 @@ test("selected improvement feedback is ranked lowest first and suppresses profic
 
   assert.deepEqual(session.improvementGuidance.map((item) => item.area), ["pacing", "posture", "eye_contact"]);
   assert.equal(session.improvementGuidance[2].proficient, true);
-  assert.match(session.improvementGuidance[2].message, /Prioritise Pacing/);
+  assert.doesNotMatch(session.improvementGuidance[2].message, /Prioritise/);
   assert.deepEqual(session.feedback.map((item) => item.module), ["audio", "body"]);
   assert.equal(session.feedback.some((item) => item.text === "Face advice"), false);
   assert.deepEqual(session.observedFeedback.map((item) => item.area), ["filler_words", "gestures", "intonation"]);
@@ -87,4 +87,74 @@ test("observed facial-expression feedback uses the below-threshold wording", () 
     session.observedFeedback.find((item) => item.area === "facial_expression")?.text,
     "We observed that Facial expressions scored 0/100, which is below the 80/100 coaching threshold.",
   );
+});
+
+test("a legacy too-fast pace is moved below proficiency and described as outside target", () => {
+  const session = reportToSession({
+    improvement_areas: ["pacing"],
+    improvement_guidance: [{ area: "pacing", score: 85, priority: 1, proficient: true, message: "Old inside-target message" }],
+    scores: { eye_contact_score: 85, expression_score: 85, posture_score: 85, gesture_score: 85 },
+    cards: [],
+    audio: {
+      performance_scores: { aggregate_vocal_rating: 85, pacing_alignment: 85, vocal_intonation_variety: 85, word_choice_efficiency: 85 },
+      actionable_coaching_cards: [],
+      transcript: { text: "Hello" },
+      readable_metrics: {
+        pace: {
+          value: 190.9,
+          unit: "words per minute",
+          label: "Too fast",
+          target_range: "148.7-172.7 words per minute",
+          meaning: "The delivery may feel rushed.",
+        },
+      },
+    },
+    raw_analysis: { duration_seconds: 30, warnings: [] },
+  }, "session-4", "project-1");
+
+  assert.equal(session.improvementGuidance[0].score, 79);
+  assert.equal(session.improvementGuidance[0].proficient, false);
+  assert.match(session.improvementGuidance[0].message, /outside the 148\.7-172\.7 words per minute target/);
+  assert.doesNotMatch(session.improvementGuidance[0].message, /inside the/);
+});
+
+test("proficient eye contact names the score threshold without another priority", () => {
+  const session = reportToSession({
+    improvement_areas: ["eye_contact"],
+    scores: { eye_contact_score: 87, expression_score: 85, posture_score: 85, gesture_score: 85 },
+    cards: [],
+    audio: {
+      performance_scores: { aggregate_vocal_rating: 85, pacing_alignment: 85, vocal_intonation_variety: 85, word_choice_efficiency: 85 },
+      actionable_coaching_cards: [],
+      transcript: { text: "Hello" },
+      readable_metrics: {},
+    },
+    raw_analysis: { duration_seconds: 30, warnings: [], face: { eye_contact_ratio: 0.74 } },
+  }, "session-5", "project-1");
+
+  assert.match(session.improvementGuidance[0].message, /87\/100 against the 80\/100 coaching threshold/);
+  assert.doesNotMatch(session.improvementGuidance[0].message, /Prioritise/);
+});
+
+test("filler feedback names at most three distinct detected examples", () => {
+  const session = reportToSession({
+    improvement_areas: ["filler_words"],
+    scores: { eye_contact_score: 85, expression_score: 85, posture_score: 85, gesture_score: 85 },
+    cards: [],
+    audio: {
+      performance_scores: { aggregate_vocal_rating: 79, pacing_alignment: 85, vocal_intonation_variety: 85, word_choice_efficiency: 79 },
+      actionable_coaching_cards: [],
+      transcript: { text: "Um, like, um, so, actually" },
+      readable_metrics: {
+        fillers: { value: 5, rate_per_100_words: 5, label: "Some fillers", target_range: "0-2 per 100 words", meaning: "They are noticeable." },
+      },
+      speech_issues: {
+        filler_words: [{ phrase: "Um," }, { phrase: "like" }, { phrase: "um" }, { phrase: "so" }, { phrase: "actually" }],
+      },
+    },
+    raw_analysis: { duration_seconds: 30, warnings: [] },
+  }, "session-6", "project-1");
+
+  assert.match(session.improvementGuidance[0].message, /Examples: “um”, “like”, and “so”\./);
+  assert.doesNotMatch(session.improvementGuidance[0].message, /actually/);
 });

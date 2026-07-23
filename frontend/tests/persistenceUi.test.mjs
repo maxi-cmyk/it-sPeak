@@ -27,10 +27,15 @@ test("dashboard and project routes no longer import fixture projects", async () 
   assert.equal(project.includes("initialProjects"), false);
 });
 
-test("project cards display retained session capacity", async () => {
+test("project cards display session capacity", async () => {
   const card = await readFile(new URL("../components/ProjectCard.js", import.meta.url), "utf8");
-  assert.equal(card.includes("project.session_count ?? 0"), true);
-  assert.equal(card.includes("/5 sessions"), true);
+  assert.equal(card.includes("Number(project.session_count)"), true);
+  assert.equal(card.includes(">Sessions</span>"), true);
+  assert.equal(card.includes("Retained sessions"), false);
+  assert.equal(card.includes("Array.from({ length: 5 }"), true);
+  assert.equal(card.includes('role="link"'), false);
+  assert.equal(card.includes("aria-expanded={menuOpen}"), true);
+  assert.equal(card.includes('days === 0 ? "Due today"'), true);
 });
 
 test("project folder exposes one first-session action and an editor", async () => {
@@ -39,6 +44,20 @@ test("project folder exposes one first-session action and an editor", async () =
   assert.equal(project.includes("Start session 1"), false);
   assert.equal(project.includes("Edit project"), true);
   assert.equal(project.includes("updateProject(id"), true);
+  assert.equal(project.includes("Session 1 is used as the baseline for your progress."), true);
+  assert.equal(project.includes("The scoring profile applied"), false);
+  assert.equal(project.includes("protected"), false);
+  assert.equal(project.includes("retained"), false);
+  assert.equal(project.includes("Selected coaching focus"), false);
+  assert.equal(project.includes("Pillar progress"), false);
+});
+
+test("project editor uses accessible selection icons and themed date control", async () => {
+  const editor = await readFile(new URL("../components/AddProjectModal.js", import.meta.url), "utf8");
+  assert.equal(editor.includes("Project description"), true);
+  assert.equal(editor.includes("Rehearsal goal"), false);
+  assert.equal(editor.includes("ImprovementAreaIcon"), true);
+  assert.equal(editor.includes("date-control"), true);
 });
 
 test("dashboard and project headers omit the removed introductory copy", async () => {
@@ -46,5 +65,6 @@ test("dashboard and project headers omit the removed introductory copy", async (
   const project = await readFile(new URL("../app/project/[id]/page.js", import.meta.url), "utf8");
   assert.equal(dashboard.includes("Your rehearsal projects"), false);
   assert.equal(dashboard.includes("Track each baseline"), false);
+  assert.equal(dashboard.includes('<h1 className="page-title">Practice archive</h1>'), true);
   assert.equal(project.includes("Project ·"), false);
 });
