@@ -102,6 +102,10 @@ faster `librosa.yin` tracker with speaker-normalized semitone scoring.
 Set `NUMBA_CACHE_DIR` only when the host requires a different writable cache
 location.
 
+The production worker uses Celery's `solo` pool. With one analysis at a time,
+this avoids keeping both a heavyweight prefork parent and a MediaPipe/Librosa
+child inside the same Railway service.
+
 ### Build and smoke-test locally
 
 Build from the repository root:
