@@ -9,8 +9,9 @@ Run every command in this guide from `backend/` unless stated otherwise. For sys
 - Node.js 20+ for the single-command service supervisor.
 - Python 3.11 and `backend/.venv` with `requirements.txt` installed.
 - FFmpeg and ffprobe on `PATH`, or configured through `ITSPEAK_FFMPEG_BIN` and `ITSPEAK_FFPROBE_BIN`.
-- Redis available locally or through `ITSPEAK_REDIS_URL`.
-- A configured `backend/.env` containing Clerk, Supabase, and OpenAI values.
+- Redis available locally or through `ITSPEAK_REDIS_URL`. On Windows, start Docker Desktop and `docker start itspeak-redis` (or Memurai) before the supervisor — see the [root README](../README.md#install-system-prerequisites).
+- A configured `backend/.env` containing Clerk, Supabase, and OpenAI values. On Windows, also set `ITSPEAK_ARTIFACT_DIR` to a writable Windows path.
+- Database schema applied once for a new project (`backend/persistence/schema.sql` or `supabase db push`) — see the [root schema section](../README.md#apply-the-supabase-schema).
 
 ## Environment variables
 
@@ -26,7 +27,7 @@ The complete defaults and calibration values are documented in `.env.example`. T
 | `ITSPEAK_SUPABASE_STORAGE_BUCKET` | Optional | Private artifact bucket; defaults to `session-artifacts` |
 | `ITSPEAK_REDIS_URL` | Required service | Celery broker; defaults to `redis://localhost:6379/0` |
 | `ITSPEAK_OPENAI_API_KEY` | Required for full analysis | Whisper transcription and generated coaching |
-| `ITSPEAK_ARTIFACT_DIR` | Platform-dependent | Pending local artifacts; use a Windows path on Windows |
+| `ITSPEAK_ARTIFACT_DIR` | Platform-dependent | Pending local artifacts; **required on Windows** (example: `C:\Users\YOUR_USERNAME\AppData\Local\itspeak-sessions`) |
 
 FastAPI also accepts `ITSPEAK_CLERK_SECRET_KEY` and `ITSPEAK_CLERK_JWT_KEY` as aliases. Never expose the Clerk or Supabase secret through a frontend `NEXT_PUBLIC_*` variable.
 
@@ -385,11 +386,13 @@ The command fails when the provisional 5 fps cadence changes the movement classi
 | Symptom | Likely cause | Recovery |
 | --- | --- | --- |
 | Supervisor reports that the virtual environment is missing | `backend/.venv` was not created | Follow the root installation steps |
-| Redis does not become ready | Redis executable missing, custom Redis unreachable, or port conflict | Run the Redis and port checks above |
+| Redis does not become ready | Redis executable missing, Docker Desktop not running, custom Redis unreachable, or port conflict | On Windows run `docker start itspeak-redis`; otherwise run the Redis and port checks above |
+| Supervisor fails with `redis-server.exe` / ENOENT | Nothing listening on 6379 and no native Redis binary on Windows | Start Docker Redis first; the supervisor will reuse it instead of spawning `redis-server.exe` |
 | API starts but jobs remain queued | Celery worker is not connected to the same Redis URL | Compare `ITSPEAK_REDIS_URL` and run `inspect ping` |
-| Authentication returns `401` | Missing session, mismatched Clerk instances, or invalid token | Reauthenticate and compare frontend/backend Clerk configuration |
+| Authentication returns `401` | Missing session, mismatched Clerk instances, or invalid token | Reauthenticate and compare frontend/backend Clerk configuration; see [root Clerk setup](../README.md#create-the-cloud-accounts) |
 | Authentication returns `503` | Clerk verification is not configured or unavailable | Check the Clerk configuration result and backend logs |
-| Persistence requests fail | Supabase URL/secret missing, schema not migrated, or bucket unavailable | Confirm configuration, apply migrations, and inspect Supabase |
+| Persistence requests fail | Supabase URL/secret missing, schema not migrated, or bucket unavailable | Confirm configuration, apply `schema.sql` or migrations, and inspect Supabase |
+| Uploads fail writing artifacts on Windows | `ITSPEAK_ARTIFACT_DIR` still points at `/tmp/...` | Set a writable Windows path in `backend/.env` and restart the backend |
 | Analysis fails during media probing | FFmpeg or ffprobe missing or not configured | Run version checks or set the explicit binary paths |
 | Analysis fails at transcription | OpenAI key missing or rejected | Check `ITSPEAK_OPENAI_API_KEY` without printing it |
 | Matplotlib reports an unwritable cache | Default cache directory is restricted | Set `MPLCONFIGDIR` as shown in the service commands |
@@ -415,8 +418,8 @@ The command fails when the provisional 5 fps cadence changes the movement classi
 
 ## Persistence and artifact lifecycle
 
-- `persistence/schema.sql` is the consolidated master schema for a new empty project and must be run only once.
-- Timestamped files under `../supabase/migrations/` are retained as the non-destructive upgrade path for existing databases.
+- `persistence/schema.sql` is the consolidated master schema for a **new empty** project and must be run only once (SQL Editor). Prefer this over pasting historical `INSERT` snippets from old migration files.
+- Timestamped files under `../supabase/migrations/` are the non-destructive upgrade path for existing databases, or the full ordered bootstrap when using `supabase db push`.
 - Pending and failed session artifacts use opaque local paths and expire after 24 hours.
 - Successful reports, videos, and landmarks are committed to Supabase Postgres and private Storage.
 - Signed artifact URLs are short-lived and owner-authorized.

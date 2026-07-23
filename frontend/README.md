@@ -16,7 +16,7 @@ Run every command in this guide from `frontend/` unless stated otherwise. For fu
 
 - Node.js 20 or newer.
 - npm and the committed `package-lock.json`.
-- A configured `frontend/.env.local`.
+- A configured `frontend/.env.local` (Clerk keys from the same instance as the backend; see the [root cloud-account checklist](../README.md#create-the-cloud-accounts)).
 - The backend available at `NEXT_PUBLIC_API_URL` for authenticated application data.
 
 ## Install
@@ -181,10 +181,12 @@ npm run dev
 
 ### Diagnose Clerk authentication
 
+First-time Clerk setup (creating the app and allowing `http://localhost:3000` / `/sign-in` / `/sign-up`) is covered in the [root README](../README.md#create-the-cloud-accounts).
+
 1. Confirm `.env.local` exists.
 2. Confirm `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` are populated without printing or sharing their values.
-3. Confirm both keys belong to the same Clerk instance.
-4. Confirm the backend uses the matching Clerk instance and that `ITSPEAK_FRONTEND_ORIGIN` exactly matches the browser origin.
+3. Confirm both keys belong to the same Clerk instance as `backend/.env`.
+4. Confirm the backend uses that matching Clerk instance and that `ITSPEAK_FRONTEND_ORIGIN` exactly matches the browser origin (including port).
 5. Restart the frontend after changing environment values.
 
 | Symptom | Likely cause | Action |

@@ -59,6 +59,8 @@ Operational documentation:
 
 ## Prerequisites
 
+First-time setup needs local tools **and** three cloud accounts (Clerk, Supabase, OpenAI). Create the accounts before filling environment files — empty keys produce sign-in loops, `401`/`503` responses, or failed uploads that look like app bugs.
+
 ### Local software
 
 | Requirement | Version | Purpose |
@@ -69,6 +71,7 @@ Operational documentation:
 | Python | 3.11 | Run FastAPI, Celery, MediaPipe, Librosa, and tests |
 | FFmpeg and ffprobe | Current stable | Validate and decode uploaded media |
 | Redis | 7 recommended | Celery broker and task state |
+| Docker Desktop | Current stable (Windows) | Recommended way to run Redis on Windows |
 
 ### External services
 
@@ -78,7 +81,39 @@ Operational documentation:
 | Supabase | Projects, sessions, reports, and private artifacts | Backend environment file |
 | OpenAI | Live transcription and generated coaching | Backend environment file |
 
-The Supabase CLI is optional. Use it to link the project and apply migrations, or apply the SQL through the Supabase SQL Editor.
+The Supabase CLI is optional. Use it to link the project and apply migrations, or paste SQL through the Supabase SQL Editor. Install it from the [Supabase CLI docs](https://supabase.com/docs/guides/cli) only if you prefer `supabase db push`.
+
+### Create the cloud accounts
+
+Complete these once per developer machine / team project. Use the **same** Clerk instance in both `frontend/.env.local` and `backend/.env`.
+
+#### 1. Clerk
+
+1. Create an application at [clerk.com](https://clerk.com).
+2. In **API Keys**, copy the **Publishable key** and **Secret key**.
+3. In **Configure → Domains / Paths** (wording varies by Clerk UI), allow local development:
+   - Application / home URL: `http://localhost:3000`
+   - Sign-in URL: `http://localhost:3000/sign-in`
+   - Sign-up URL: `http://localhost:3000/sign-up`
+4. Put the publishable key in `frontend/.env.local` as `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`.
+5. Put the **same** secret key in both `frontend/.env.local` (`CLERK_SECRET_KEY`) and `backend/.env` (`CLERK_SECRET_KEY`).
+
+Mismatched Clerk instances between frontend and backend are the most common cause of local `401` responses.
+
+#### 2. Supabase
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. From **Project Settings → API**, copy:
+   - **Project URL** → `ITSPEAK_SUPABASE_URL`
+   - **service_role** (secret) key → `ITSPEAK_SUPABASE_SECRET_KEY`  
+     Never put the service role key in any `NEXT_PUBLIC_*` variable.
+3. Apply the database schema next (see [Apply the Supabase schema](#apply-the-supabase-schema)). That step also creates the private `session-artifacts` storage bucket.
+
+#### 3. OpenAI
+
+1. Create an API key at [platform.openai.com](https://platform.openai.com).
+2. Put it in `backend/.env` as `ITSPEAK_OPENAI_API_KEY`.
+3. The backend uses Whisper for transcription and a chat model for coaching; without this key, uploads may pass the quality gate but full analysis will fail.
 
 ### Install system prerequisites
 
@@ -86,11 +121,15 @@ macOS with Homebrew:
 
 ```bash
 brew install git node python@3.11 ffmpeg redis
+brew services start redis
 ```
 
-Linux package names vary by distribution. Install Git, Node.js 20+, Python 3.11 with venv support, FFmpeg, and Redis through the distribution package manager or the vendors' supported installers.
+Linux package names vary by distribution. Install Git, Node.js 20+, Python 3.11 with venv support, FFmpeg, and Redis through the distribution package manager or the vendors' supported installers, then start Redis so it listens on `127.0.0.1:6379`.
 
 Windows with winget and Docker Desktop:
+
+1. Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/) and leave it running.
+2. Install the other tools, then start Redis in Docker:
 
 ```powershell
 winget install Git.Git
@@ -100,9 +139,17 @@ winget install Gyan.FFmpeg
 docker run -d -p 6379:6379 --name itspeak-redis redis:7
 ```
 
-Memurai can replace Docker Redis on Windows. The backend supervisor reuses any Redis-compatible service already responding at the configured address.
+On later sessions, if the container already exists:
 
-Confirm the required executables are available before installing the application:
+```powershell
+docker start itspeak-redis
+```
+
+Memurai can replace Docker Redis on Windows. The backend supervisor **reuses** any Redis-compatible service already responding at `ITSPEAK_REDIS_URL`. If nothing is listening, it tries to spawn a local `redis-server` / `redis-server.exe`, which most Windows machines do **not** have — so Windows developers should keep Docker Redis (or Memurai) running before `npm run backend`.
+
+Confirm the required executables are available before installing the application.
+
+macOS/Linux:
 
 ```bash
 git --version
@@ -111,14 +158,26 @@ npm --version
 python3.11 --version
 ffmpeg -version
 ffprobe -version
-redis-server --version
+redis-cli ping
 ```
 
-On Windows, use `py -3.11 --version`. If FFmpeg is not on `PATH`, configure the absolute executable paths in `backend/.env`.
+Windows PowerShell:
+
+```powershell
+git --version
+node --version
+npm --version
+py -3.11 --version
+ffmpeg -version
+ffprobe -version
+docker exec itspeak-redis redis-cli ping
+```
+
+Expect `PONG` from the Redis check. If FFmpeg is not on `PATH`, set absolute paths with `ITSPEAK_FFMPEG_BIN` and `ITSPEAK_FFPROBE_BIN` in `backend/.env`.
 
 ## Install
 
-Run these commands from the repository root.
+Run these commands from the repository root. Root `package.json` has no npm dependencies; you only install Python packages under `backend/` and Node packages under `frontend/`.
 
 macOS/Linux:
 
@@ -162,6 +221,8 @@ Copy-Item frontend/.env.example frontend/.env.local
 Copy-Item backend/.env.example backend/.env
 ```
 
+Then fill in the Clerk, Supabase, and OpenAI values from [Create the cloud accounts](#create-the-cloud-accounts).
+
 ### `frontend/.env.local`
 
 | Variable | Requirement | Purpose |
@@ -180,28 +241,59 @@ Copy-Item backend/.env.example backend/.env
 | `CLERK_SECRET_KEY` | Required | Verify Clerk session tokens; use the same Clerk instance as the frontend |
 | `CLERK_JWT_KEY` | Optional | PEM public key for local JWT verification; otherwise Clerk JWKS is used |
 | `ITSPEAK_SUPABASE_URL` | Required | Supabase project URL |
-| `ITSPEAK_SUPABASE_SECRET_KEY` | Required | Backend-only database and Storage credential |
+| `ITSPEAK_SUPABASE_SECRET_KEY` | Required | Backend-only **service_role** key for database and Storage |
 | `ITSPEAK_SUPABASE_PUBLISHABLE_KEY` | Optional | Public Supabase value retained for configuration compatibility |
 | `ITSPEAK_SUPABASE_STORAGE_BUCKET` | Optional | Private bucket name; defaults to `session-artifacts` |
 | `ITSPEAK_REDIS_URL` | Required service | Celery connection; defaults to `redis://localhost:6379/0` |
 | `ITSPEAK_OPENAI_API_KEY` | Required for full analysis | Live transcription and generated coaching |
+| `ITSPEAK_ARTIFACT_DIR` | **Required on Windows** | Writable folder for pending uploads; see below |
 
-On Windows, set `ITSPEAK_ARTIFACT_DIR` to a Windows path and configure `ITSPEAK_FFMPEG_BIN` and `ITSPEAK_FFPROBE_BIN` when the executables are not on `PATH`.
+**Windows — set a local artifact directory** (do not leave the Unix default `/tmp/itspeak-sessions`):
+
+```env
+ITSPEAK_ARTIFACT_DIR=C:\Users\YOUR_USERNAME\AppData\Local\itspeak-sessions
+```
+
+Also set `ITSPEAK_FFMPEG_BIN` and `ITSPEAK_FFPROBE_BIN` to the full `.exe` paths when `ffmpeg` / `ffprobe` are not on `PATH`.
 
 ## Apply the Supabase schema
 
-With the Supabase CLI installed:
+Pick **one** path. Do not mix them on the same project.
+
+### Option A — new empty Supabase project (recommended for first clone)
+
+Open the Supabase **SQL Editor** and run the consolidated master schema **once**:
+
+`backend/persistence/schema.sql`
+
+That file creates tables, RLS policies, archetype seeds (including current scoring bands), and the private `session-artifacts` bucket. Do **not** paste only the `insert into public.archetype_configs ...` block from an older migration file — those historical seeds may lag behind the master schema.
+
+### Option B — Supabase CLI (also fine for a new empty project)
+
+Install the [Supabase CLI](https://supabase.com/docs/guides/cli), then from the repository root:
 
 ```bash
 supabase link --project-ref YOUR_PROJECT_REF
 supabase db push
 ```
 
-For a new empty project, run the consolidated master schema at `backend/persistence/schema.sql` once in the Supabase SQL Editor. For an existing database, apply only the unapplied timestamped upgrades under `supabase/migrations/`; do not rerun the master schema over existing tables.
+`db push` applies every file under `supabase/migrations/` in order. That includes the initial schema **and** later upgrades (for example posture band recalibrations). Prefer this over copying individual `INSERT` snippets by hand.
+
+### Option C — existing database that already has tables
+
+Apply only the **unapplied** timestamped upgrades under `supabase/migrations/`. Do **not** rerun `backend/persistence/schema.sql` over an existing database (it is a full bootstrap, not an incremental patch).
+
+After applying schema, you can confirm posture bands look current with:
+
+```sql
+select archetype_key, scoring_config->'posture' as posture
+from public.archetype_configs
+order by archetype_key;
+```
 
 ## Run locally
 
-Open two terminals at the repository root after installation and configuration.
+Open two terminals at the repository root after installation, environment configuration, and schema setup. On Windows, confirm Docker Desktop is running and `docker start itspeak-redis` has succeeded before starting the backend.
 
 Terminal 1 — complete backend:
 
@@ -217,7 +309,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). The API health endpoint is [http://localhost:8000/healthz](http://localhost:8000/healthz).
 
-Press `Ctrl+C` in each terminal to stop the application. The backend supervisor stops FastAPI, the Celery worker, Celery Beat, and any Redis process it started. It intentionally leaves a previously running Redis service untouched.
+Press `Ctrl+C` in each terminal to stop the application. The backend supervisor stops FastAPI, the Celery worker, Celery Beat, and any Redis process it started. It intentionally leaves a previously running Redis service (including the Docker `itspeak-redis` container) untouched.
 
 For individual commands and diagnostics, use the [frontend guide](frontend/README.md) and [backend guide](backend/README.md).
 
