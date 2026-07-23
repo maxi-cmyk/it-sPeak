@@ -323,8 +323,7 @@ share the same persistent artifact volume.
 On the selected container platform:
 
 1. Create a Docker service from this repository, using `backend/` as the root
-   directory and `Dockerfile` as the Dockerfile path. Use the `linux/amd64`
-   architecture required by the pinned MediaPipe release.
+   directory and `Dockerfile` as the Dockerfile path.
 2. Create a managed Redis service with persistence enabled.
 3. Mount persistent storage at `/data` and keep the service at exactly one
    replica.
