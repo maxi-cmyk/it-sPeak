@@ -1,6 +1,7 @@
 import { improvementAreaLabels, improvementAreaModuleByValue, improvementAreaValues } from "./improvementAreas.mjs";
 
 export const COACHING_THRESHOLD = 80;
+const OUTSIDE_TARGET_SCORE_CAP = COACHING_THRESHOLD - 1;
 
 const formatTimestamp = (seconds) => {
   const total = Math.max(0, Math.round(seconds));
@@ -11,6 +12,50 @@ const averageAvailable = (...values) => {
   const available = values.filter((value) => Number.isFinite(value));
   return available.length ? Math.round(available.reduce((sum, value) => sum + value, 0) / available.length) : null;
 };
+
+function audioMetricMatchesTarget(area, report) {
+  const metrics = report.audio?.readable_metrics || {};
+  if (area === "pacing" && metrics.pace?.label) return metrics.pace.label.toLowerCase() === "on target";
+  if (area === "intonation" && metrics.intonation?.label) return metrics.intonation.label.toLowerCase() === "on target";
+  if (area === "filler_words" && metrics.fillers?.label) return metrics.fillers.label.toLowerCase() === "clean";
+  return null;
+}
+
+function effectiveAreaScore(area, score, report) {
+  if (!Number.isFinite(score)) return score;
+  return audioMetricMatchesTarget(area, report) === false
+    ? Math.min(score, OUTSIDE_TARGET_SCORE_CAP)
+    : score;
+}
+
+function fillerObservation(fillers) {
+  return Number.isFinite(fillers.rate_per_100_words)
+    ? `${fillers.value} filler words (${fillers.rate_per_100_words} per 100 words)`
+    : `${fillers.value} filler words`;
+}
+
+function fillerExamples(fillers, report) {
+  const supplied = Array.isArray(fillers.examples) && fillers.examples.length
+    ? fillers.examples
+    : (report.audio?.speech_issues?.filler_words || []).map((issue) => issue.phrase);
+  const examples = [];
+  for (const value of supplied) {
+    const clean = String(value || "").trim().toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, "");
+    if (clean && !examples.includes(clean)) examples.push(clean);
+    if (examples.length === 3) break;
+  }
+  return examples;
+}
+
+function fillerExamplesText(fillers, report) {
+  const examples = fillerExamples(fillers, report).map((example) => `“${example}”`);
+  if (!examples.length) return "";
+  if (examples.length === 1) return ` Example: ${examples[0]}.`;
+  const joined = examples.length === 2
+    ? `${examples[0]} and ${examples[1]}`
+    : `${examples.slice(0, -1).join(", ")}, and ${examples.at(-1)}`;
+  return ` Examples: ${joined}.`;
+}
 
 function nonProficientMessage(area, score, report) {
   const metrics = report.audio?.readable_metrics || {};
@@ -26,7 +71,7 @@ function nonProficientMessage(area, score, report) {
   }
   if (area === "filler_words" && metrics.fillers) {
     const fillers = metrics.fillers;
-    return `${fillers.value} filler words flagged (${fillers.label.toLowerCase()}), above the ${fillers.target_range} target. ${fillers.meaning}`;
+    return `${fillerObservation(fillers)} flagged (${fillers.label.toLowerCase()}). The target is ${fillers.target_range}.${fillerExamplesText(fillers, report)} ${fillers.meaning}`;
   }
   if (area === "eye_contact" && Number.isFinite(face.eye_contact_ratio)) {
     const lapseStart = face.worst_eye_contact_lapse_start;
@@ -48,7 +93,7 @@ function nonProficientMessage(area, score, report) {
   return `This area scored ${Math.round(score)}/100, below the ${COACHING_THRESHOLD}/100 coaching threshold — prioritise it in your next rehearsal.`;
 }
 
-function proficientMessage(area, score, report, nextArea) {
+function proficientMessage(area, score, report) {
   const metrics = report.audio?.readable_metrics || {};
   const face = report.raw_analysis?.face || {};
   const body = report.raw_analysis?.body || {};
@@ -61,9 +106,9 @@ function proficientMessage(area, score, report, nextArea) {
     base = `Pitch variation measured ${intonation.value} ${intonation.unit} (${intonation.label.toLowerCase()}), within the ${intonation.target_range} target.`;
   } else if (area === "filler_words" && metrics.fillers) {
     const fillers = metrics.fillers;
-    base = `Only ${fillers.value} filler words detected (${fillers.label.toLowerCase()}), under the ${fillers.target_range} target.`;
+    base = `${fillerObservation(fillers)} detected (${fillers.label.toLowerCase()}), within the ${fillers.target_range} target.${fillerExamplesText(fillers, report)}`;
   } else if (area === "eye_contact" && Number.isFinite(face.eye_contact_ratio)) {
-    base = `You held eye contact for ${Math.round(face.eye_contact_ratio * 100)}% of tracked frames, well above the coaching threshold.`;
+    base = `You held eye contact for ${Math.round(face.eye_contact_ratio * 100)}% of tracked frames. This area scored ${Math.round(score)}/100 against the ${COACHING_THRESHOLD}/100 coaching threshold.`;
   } else if (area === "facial_expression" && Number.isFinite(face.expression_variance)) {
     base = `Facial expression variance measured ${Math.round(face.expression_variance * 100)}%, a strong, visible range.`;
   } else if (area === "posture" && Number.isFinite(body.posture_alignment)) {
@@ -73,54 +118,58 @@ function proficientMessage(area, score, report, nextArea) {
   } else {
     base = `You are proficient in ${improvementAreaLabels[area]} at ${Math.round(score)}/100.`;
   }
-  return nextArea
-    ? `${base} Prioritise ${improvementAreaLabels[nextArea]}, your lowest-scoring other selected area.`
-    : `${base} Maintain this strength and select another area for your next growth target.`;
+  return base;
 }
 
 function buildImprovementGuidance(report, scores) {
   const selected = report.improvement_areas || improvementAreaValues;
+  const effectiveScores = Object.fromEntries(
+    Object.entries(scores).map(([area, score]) => [area, effectiveAreaScore(area, score, report)]),
+  );
   const ranked = selected
-    .filter((area) => Number.isFinite(scores[area]))
-    .sort((left, right) => scores[left] - scores[right]);
+    .filter((area) => Number.isFinite(effectiveScores[area]))
+    .sort((left, right) => effectiveScores[left] - effectiveScores[right]);
   if (report.improvement_guidance?.length) {
     return report.improvement_guidance.map((item) => {
-      const proficient = item.score >= COACHING_THRESHOLD;
-      if (proficient === item.proficient) return item;
-      const nextArea = ranked.find((candidate) => candidate !== item.area);
+      const sourceScore = Number.isFinite(effectiveScores[item.area]) ? effectiveScores[item.area] : effectiveAreaScore(item.area, item.score, report);
+      const proficient = sourceScore >= COACHING_THRESHOLD;
       return {
         ...item,
+        score: sourceScore,
         proficient,
         message: proficient
-          ? proficientMessage(item.area, item.score, report, nextArea)
-          : nonProficientMessage(item.area, item.score, report),
+          ? proficientMessage(item.area, sourceScore, report)
+          : nonProficientMessage(item.area, sourceScore, report),
       };
-    });
+    }).sort((left, right) => left.score - right.score).map((item, index) => ({ ...item, priority: index + 1 }));
   }
   return ranked.map((area, index) => {
-    const proficient = scores[area] >= COACHING_THRESHOLD;
-    const nextArea = ranked.find((candidate) => candidate !== area);
+    const score = effectiveScores[area];
+    const proficient = score >= COACHING_THRESHOLD;
     return {
       area,
-      score: scores[area],
+      score,
       priority: index + 1,
       proficient,
-      message: proficient ? proficientMessage(area, scores[area], report, nextArea) : nonProficientMessage(area, scores[area], report),
+      message: proficient ? proficientMessage(area, score, report) : nonProficientMessage(area, score, report),
     };
   });
 }
 
 function buildObservedFeedback(report, scores) {
   const selected = new Set(report.improvement_areas || improvementAreaValues);
+  const effectiveScores = Object.fromEntries(
+    Object.entries(scores).map(([area, score]) => [area, effectiveAreaScore(area, score, report)]),
+  );
   return improvementAreaValues
-    .filter((area) => !selected.has(area) && Number.isFinite(scores[area]) && scores[area] < COACHING_THRESHOLD)
-    .sort((left, right) => scores[left] - scores[right])
+    .filter((area) => !selected.has(area) && Number.isFinite(effectiveScores[area]) && effectiveScores[area] < COACHING_THRESHOLD)
+    .sort((left, right) => effectiveScores[left] - effectiveScores[right])
     .map((area) => ({
       area,
       module: improvementAreaModuleByValue[area],
-      score: scores[area],
-      text: `We observed that ${improvementAreaLabels[area]} scored ${Math.round(scores[area])}/100, which is below the ${COACHING_THRESHOLD}/100 coaching threshold.`,
-      tip: `${nonProficientMessage(area, scores[area], report)} Consider adding ${improvementAreaLabels[area]} to your selected focus.`,
+      score: effectiveScores[area],
+      text: `We observed that ${improvementAreaLabels[area]} scored ${Math.round(effectiveScores[area])}/100, which is below the ${COACHING_THRESHOLD}/100 coaching threshold.`,
+      tip: `${nonProficientMessage(area, effectiveScores[area], report)} Consider adding ${improvementAreaLabels[area]} to your selected focus.`,
     }));
 }
 

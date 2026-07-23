@@ -5,7 +5,7 @@ export const improvementAreaGroups = [
     detail: "How your voice carries the message",
     options: [
       { value: "pacing", label: "Pacing", detail: "Speaking rate and rhythm" },
-      { value: "intonation", label: "Vocab variety", detail: "Pitch range and emphasis" },
+      { value: "intonation", label: "Intonation", detail: "Pitch range and emphasis" },
       { value: "filler_words", label: "Filler words", detail: "Clean, intentional phrasing" },
     ],
   },

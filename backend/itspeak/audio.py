@@ -37,6 +37,7 @@ SUPPORTED_AUDIO_EXTENSIONS = {".wav", ".mp3", ".m4a"}
 DEFAULT_SCORING_PROFILE_PATH = Path(__file__).resolve().parents[1] / "calibrated_singapore_targets.json"
 DEFAULT_SAMPLE_AUDIO_FILENAME = "sample_presentation.mp3"
 DEFAULT_FILLERS = ["um", "uh", "like", "so", "basically", "actually"]
+FILLER_EXAMPLE_LIMIT = 3
 PITCH_FRAME_HOP_LENGTH = 512
 MIN_SEGMENT_VOICED_PITCHES = 3
 
@@ -136,19 +137,19 @@ def build_coaching_cards(
     filler_ratio,
 ):
     coaching_cards = []
-    if pacing_score < 85.0:
+    if pacing_score < 80.0:
         if observed_wpm > target_wpm:
             coaching_cards.append("Delivery speed is rushing past your baseline. Try slowing down your syllables.")
         else:
             coaching_cards.append("Cadence drops below target metrics. Focus on maintaining kinetic delivery speed.")
 
-    if intonation_score < 85.0:
+    if intonation_score < 80.0:
         if observed_pitch_std < target_pitch_std:
             coaching_cards.append("Flat tonal profile found. Intentionally color your words with expressive high/low pitch changes.")
         else:
             coaching_cards.append("Pitch variation is above the benchmark. Keep emphasis for the most important phrases.")
 
-    if word_choice_score < 85.0:
+    if word_choice_score < 80.0:
         coaching_cards.append(f"High density of filler keywords found ({filler_ratio * 100:.1f}%). Replace 'um' or 'like' with silent breaks.")
 
     return coaching_cards if coaching_cards else ["Outstanding verbal performance alignment!"]
@@ -192,6 +193,7 @@ def rescore_analysis_with_profile(results, scoring_profile):
         total_words,
         calibrated_metrics,
         performance_scores,
+        extract_filler_examples(results.get("speech_issues", {}).get("filler_words", [])),
     )
 
     results["baseline_profile"] = {
@@ -298,15 +300,15 @@ def build_performance_scores(
     word_choice_score = score_word_choice(filler_ratio)
 
     pacing_score = cap_score_for_label(pacing_score, pace_label, {
-        "Too slow": 85.0,
-        "Too fast": 85.0,
+        "Too slow": 79.0,
+        "Too fast": 79.0,
     })
     intonation_score = cap_score_for_label(intonation_score, intonation_label, {
-        "Too flat": 85.0,
-        "Over-varied": 85.0,
+        "Too flat": 79.0,
+        "Over-varied": 79.0,
     })
     word_choice_score = cap_score_for_label(word_choice_score, filler_label, {
-        "Some fillers": 90.0,
+        "Some fillers": 79.0,
         "Distracting fillers": 75.0,
     })
 
@@ -323,6 +325,20 @@ def build_performance_scores(
 
 def build_transcript_text(words_data):
     return " ".join(word["word"] for word in words_data)
+
+def extract_filler_examples(items, filler_words=DEFAULT_FILLERS, limit=FILLER_EXAMPLE_LIMIT):
+    examples = []
+    for item in items or []:
+        if isinstance(item, dict):
+            value = item.get("clean") or item.get("phrase") or item.get("word")
+        else:
+            value = item
+        clean = str(value or "").lower().strip().strip(".,!?:;\"'()[]{}")
+        if clean in filler_words and clean not in examples:
+            examples.append(clean)
+        if len(examples) == limit:
+            break
+    return examples
 
 def label_overall_score(score):
     if score >= 85.0:
@@ -351,7 +367,7 @@ def label_intonation(observed_pitch_std, target_pitch_std, tolerance_margin):
     return "On target"
 
 def label_fillers(filler_count, filler_ratio):
-    if filler_count == 0:
+    if filler_ratio <= 0.02:
         return "Clean"
     if filler_ratio <= 0.06:
         return "Some fillers"
@@ -364,6 +380,7 @@ def build_readable_metrics(
     total_words,
     calibrated_metrics,
     performance_scores,
+    filler_examples=None,
 ):
     target_wpm = calibrated_metrics["target_wpm"]
     target_pitch_std = calibrated_metrics["target_pitch_std"]
@@ -386,7 +403,7 @@ def build_readable_metrics(
         "On target": "Your pitch variation sits inside the target range for expressive but controlled delivery.",
     }
     filler_meanings = {
-        "Clean": "You avoided filler words in this sample.",
+        "Clean": "Your filler-word rate stayed within the target for this sample.",
         "Some fillers": "You used a few filler words. They are noticeable, but not yet dominating the delivery.",
         "Distracting fillers": "Filler words are frequent enough that they may distract from the message.",
     }
@@ -411,6 +428,8 @@ def build_readable_metrics(
         "fillers": {
             "label": filler_label,
             "value": filler_count,
+            "rate_per_100_words": round(filler_ratio * 100, 1),
+            "examples": extract_filler_examples(filler_examples),
             "unit": "filler words",
             "target_range": "0-2 per 100 words",
             "score": performance_scores["word_choice_efficiency"],
@@ -801,6 +820,7 @@ def analyze_audio(file_path, pause_threshold=1.5, scoring_profile=None):
         total_words,
         calibrated_metrics,
         performance_scores,
+        extract_filler_examples(words_data),
     )
     summary = build_summary(readable_metrics, performance_scores, coaching_cards)
 

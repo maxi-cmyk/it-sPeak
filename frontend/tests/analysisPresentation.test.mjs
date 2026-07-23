@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { analysisProgress, splitMetricPhrases, visibleAnalysisWarnings } from "../lib/analysisPresentation.mjs";
 
@@ -40,4 +41,16 @@ test("technical camera and proxy caveats are hidden from the analysis UI", () =>
     ] },
   );
   assert.deepEqual(warnings, ["Face visibility was intermittent.", "Audio confidence is low."]);
+});
+
+test("combined analysis presents one threshold and recoverable result states", async () => {
+  const page = await readFile(new URL("../app/session/[id]/page.js", import.meta.url), "utf8");
+  const player = await readFile(new URL("../components/VideoAnalysisPlayer.js", import.meta.url), "utf8");
+
+  assert.equal(page.includes('RatingBar label="Voice"'), true);
+  assert.equal(page.includes("target={session.targetTone}"), false);
+  assert.equal(page.includes("setTranscriptError(requestError.message)"), true);
+  assert.equal(page.includes("setLoadVersion((current) => current + 1)"), true);
+  assert.equal(page.includes("const showCoaching = selectedNeedsWork.length > 0 || observedFeedback.length > 0"), true);
+  assert.equal(player.includes(">Warning</p>"), true);
 });

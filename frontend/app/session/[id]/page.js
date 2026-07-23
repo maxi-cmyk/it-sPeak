@@ -35,22 +35,26 @@ export default function SessionSummaryPage() {
   const { authReady, getSessionAnalysis, updateTranscript } = useApi();
   const [session, setSession] = useState(null);
   const [error, setError] = useState(null);
+  const [loadVersion, setLoadVersion] = useState(0);
   const [editingTranscript, setEditingTranscript] = useState(false);
   const [transcriptDraft, setTranscriptDraft] = useState("");
   const [savingTranscript, setSavingTranscript] = useState(false);
+  const [transcriptError, setTranscriptError] = useState(null);
 
-  const startEditingTranscript = () => { setTranscriptDraft(session.transcript); setEditingTranscript(true); };
-  const cancelEditingTranscript = () => setEditingTranscript(false);
+  const startEditingTranscript = () => { setTranscriptDraft(session.transcript); setTranscriptError(null); setEditingTranscript(true); };
+  const cancelEditingTranscript = () => { setTranscriptError(null); setEditingTranscript(false); };
   const saveTranscript = async () => {
     setSavingTranscript(true);
+    setTranscriptError(null);
     try { await updateTranscript(id, transcriptDraft); setSession((current) => ({ ...current, transcript: transcriptDraft })); setEditingTranscript(false); }
-    catch (requestError) { setError(requestError.message); }
+    catch (requestError) { setTranscriptError(requestError.message); }
     finally { setSavingTranscript(false); }
   };
 
   useEffect(() => {
     if (!authReady) return undefined;
     const controller = new AbortController();
+    setError(null);
     getSessionAnalysis(id, controller.signal)
       .then((payload) => {
         if (payload.status !== "success" || !payload.result) {
@@ -63,86 +67,103 @@ export default function SessionSummaryPage() {
         if (requestError.name !== "AbortError") setError(requestError.message);
       });
     return () => controller.abort();
-  }, [id, authReady]);
+  }, [id, authReady, loadVersion]);
 
   if (!session) {
     return (
-      <div className="app-shell flex flex-col items-center justify-center gap-3 px-6 text-center text-zinc-400">
-        {error
-          ? <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
-          : <span className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-700 border-t-blue-400" aria-hidden="true" />}
-        <p className={error ? "text-red-700" : ""}>{error || "Loading your analysis…"}</p>
+      <div className="app-shell">
+        <Navbar backHref="/" />
+        <main className="page-container flex min-h-[calc(100vh-4rem)] items-center justify-center py-10">
+          <section className="surface-card w-full max-w-lg px-6 py-10 text-center" role={error ? "alert" : "status"} aria-live="polite">
+            <span className={`mx-auto mb-5 block h-3 w-3 rounded-full ${error ? "bg-red-500" : "animate-pulse bg-blue-500"}`} aria-hidden="true" />
+            <h1 className="text-lg font-semibold text-zinc-100">{error ? "Analysis could not be opened" : "Loading combined analysis"}</h1>
+            <p className={`mx-auto mt-2 max-w-sm text-sm leading-6 ${error ? "text-red-700" : "text-zinc-400"}`}>{error || "Retrieving your scores, coaching, recording evidence, and transcript…"}</p>
+            {error && <button type="button" onClick={() => setLoadVersion((current) => current + 1)} className="btn-primary mt-6">Try again</button>}
+          </section>
+        </main>
       </div>
     );
   }
 
   const projectHref = `/project/${session.projectId}`;
   const selectedNeedsWork = session.improvementGuidance.filter((item) => !item.proficient);
+  const selectedProficient = session.improvementGuidance.filter((item) => item.proficient);
   const observedFeedback = session.observedFeedback || [];
+  const showCoaching = selectedNeedsWork.length > 0 || observedFeedback.length > 0;
   return (
     <div className="app-shell">
       <Navbar backHref={projectHref} />
       <main className="page-container">
-        <header className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="page-kicker">Combined analysis</p>
-            <h1 className="page-title">{session.name}</h1>
-            <p className="text-zinc-500 text-sm mt-3">{session.duration} &bull; {formatDate(session.date)}</p>
-          </div>
-          <div className="self-start sm:text-right">
-            <p className="section-label mb-1">Overall score</p>
-            <ScoreRing score={session.overallScore} size={110} />
-          </div>
+        <header className="mb-6 border-b border-zinc-800 pb-6">
+          <p className="page-kicker">Combined analysis</p>
+          <h1 className="page-title">{session.name}</h1>
+          <p className="mt-1 text-sm text-zinc-400">{session.duration} <span aria-hidden="true">·</span> {formatDate(session.date)}</p>
         </header>
+
+        <section className="surface-card mb-6" aria-labelledby="score-summary-heading">
+          <div className="grid gap-6 lg:grid-cols-[11rem_1fr] lg:items-center">
+            <div className="flex flex-col items-center border-b border-zinc-800 pb-6 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-6">
+              <h2 id="score-summary-heading" className="section-label mb-3">Overall score</h2>
+              <ScoreRing score={session.overallScore} size={124} />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-zinc-100">Current rating</h2>
+              <p className="mt-1 text-sm leading-6 text-zinc-400">The coaching threshold is <strong className="font-semibold text-zinc-200">{COACHING_THRESHOLD}/100</strong>. Scores at or above it are proficient.</p>
+              <div className="mt-5 grid gap-5 sm:grid-cols-3">
+                <RatingBar label="Voice" value={session.tone} />
+                <RatingBar label="Body" value={session.body} />
+                <RatingBar label="Facial expressions" value={session.face} />
+              </div>
+            </div>
+          </div>
+        </section>
 
         <VideoAnalysisPlayer sessionId={id} analysis={session.rawAnalysis} qualityGate={session.qualityGate} />
 
-        <section className="mb-6 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
-          <div className="border-b border-zinc-800 px-6 py-4">
-            <p className="page-kicker mb-1">Your selected focus</p>
-            <p className="text-xs leading-5 text-zinc-500">Coaching threshold: {COACHING_THRESHOLD}/100. Scores of {COACHING_THRESHOLD} or above are proficient; scores below {COACHING_THRESHOLD} receive coaching.</p>
+        <section className="mb-6 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900" aria-labelledby="selected-focus-heading">
+          <div className="border-b border-zinc-800 px-5 py-4">
+            <h2 id="selected-focus-heading" className="text-base font-semibold text-zinc-100">Your selected focus</h2>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">Areas below {COACHING_THRESHOLD}/100 are ranked lowest-score first. Proficient areas remain visible without generating coaching.</p>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-zinc-800">
-            <div className="bg-zinc-900 p-4">
-              <p className="text-readiness mb-4 text-xs font-semibold uppercase tracking-wider">Needs improvement</p>
-              <div className="flex flex-col gap-4">
-                {selectedNeedsWork.length === 0 && <p className="text-sm text-zinc-500">No selected areas are below {COACHING_THRESHOLD}/100 right now.</p>}
-                {selectedNeedsWork.map((item) => (
-                  <details key={item.area} className="group">
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
-                      <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">{improvementAreaLabels[item.area] || item.area}</span>
-                      <span className={`text-lg font-semibold ${item.priority === 1 ? "text-readiness" : "text-zinc-200"}`}>{Math.round(item.score)}<span className="text-xs font-normal text-zinc-600">/100</span></span>
-                    </summary>
+          <div className="grid grid-cols-1 gap-px bg-zinc-800 lg:grid-cols-2">
+            <div className="bg-zinc-900 p-5">
+              <h3 className="text-readiness mb-3 text-sm font-semibold">Needs improvement</h3>
+              <div className="divide-y divide-zinc-800">
+                {selectedNeedsWork.length === 0 && <p className="py-2 text-sm text-emerald-700">No selected areas are below {COACHING_THRESHOLD}/100 right now.</p>}
+                {selectedNeedsWork.map((item, index) => (
+                  <div key={item.area} className={index === 0 ? "pb-4" : "py-4"}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-semibold text-zinc-300">Priority {item.priority} <span className="text-zinc-500" aria-hidden="true">·</span> {improvementAreaLabels[item.area] || item.area}</span>
+                      <span className={`text-lg font-semibold ${item.priority === 1 ? "text-readiness" : "text-zinc-200"}`}>{Math.round(item.score)}<span className="text-xs font-normal text-zinc-400">/100</span></span>
+                    </div>
                     <p className="mt-1 text-sm leading-6 text-zinc-300"><MetricText>{stripPriorityPrefix(item.message)}</MetricText></p>
-                  </details>
+                  </div>
                 ))}
               </div>
             </div>
-            <div className="bg-zinc-900 p-4">
-              <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-emerald-700">Done well</p>
-              <div className="flex flex-col gap-4">
-                {session.improvementGuidance.filter((item) => item.proficient).length === 0 && <p className="text-sm text-zinc-500">No selected areas are at or above {COACHING_THRESHOLD}/100 yet.</p>}
-                {session.improvementGuidance.filter((item) => item.proficient).map((item) => (
-                  <details key={item.area} className="group">
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
-                      <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">{improvementAreaLabels[item.area] || item.area}</span>
-                      <span className="text-lg font-semibold text-emerald-700">{Math.round(item.score)}<span className="text-xs font-normal text-zinc-600">/100</span></span>
-                    </summary>
-                    <p className="mt-1 text-sm leading-6 text-emerald-700"><MetricText>{stripPriorityPrefix(item.message)}</MetricText></p>
-                  </details>
+            <div className="bg-zinc-900 p-5">
+              <h3 className="mb-3 text-sm font-semibold text-emerald-700">Done well</h3>
+              <div className="divide-y divide-zinc-800">
+                {selectedProficient.length === 0 && <p className="py-2 text-sm text-zinc-400">No selected areas are at or above {COACHING_THRESHOLD}/100 yet.</p>}
+                {selectedProficient.map((item, index) => (
+                  <div key={item.area} className={index === 0 ? "pb-4" : "py-4"}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-semibold text-zinc-300">{improvementAreaLabels[item.area] || item.area}</span>
+                      <span className="text-lg font-semibold text-emerald-700">{Math.round(item.score)}<span className="text-xs font-normal text-zinc-400">/100</span></span>
+                    </div>
+                    <p className="mt-1 text-sm leading-6 text-zinc-300"><MetricText>{stripPriorityPrefix(item.message)}</MetricText></p>
+                  </div>
                 ))}
               </div>
             </div>
           </div>
         </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <section className="surface-card">
-            <h2 className="section-label mb-1">Coaching priorities</h2>
-            <p className="mb-4 text-xs leading-5 text-zinc-500">Selected focuses stay primary. Other low-scoring areas are noted separately so you can decide whether to add them next.</p>
+        {showCoaching && <section className="surface-card mb-6" aria-labelledby="coaching-priorities-heading">
+            <h2 id="coaching-priorities-heading" className="text-base font-semibold text-zinc-100">Coaching priorities</h2>
+            <p className="mb-5 mt-1 text-sm leading-6 text-zinc-400">Selected focuses stay primary. Other low-scoring areas are noted separately so you can decide whether to add them next.</p>
             <div className="flex flex-col gap-4">
-              {selectedNeedsWork.length === 0 && <p className="text-sm leading-6 text-emerald-700">Your selected areas are at or above {COACHING_THRESHOLD}/100. Maintain them or add another improvement field to your project.</p>}
-              {selectedNeedsWork.length > 0 && session.feedback.length === 0 && <p className="text-sm leading-6 text-zinc-500">Your selected areas needing work are detailed above. No additional coaching card was generated for this analysis.</p>}
+              {selectedNeedsWork.length > 0 && session.feedback.length === 0 && <p className="text-sm leading-6 text-zinc-400">Your selected areas needing work are detailed above. No additional coaching card was generated for this analysis.</p>}
               {session.feedback.map((item, index) => (
                 <div key={`${item.text}-${index}`}>
                   <div className="flex items-center gap-3">
@@ -155,7 +176,7 @@ export default function SessionSummaryPage() {
               {observedFeedback.length > 0 && (
                 <div className="border-t border-zinc-800 pt-4">
                   <h3 className="mb-1 text-sm font-semibold text-zinc-200">Other areas observed</h3>
-                  <p className="mb-4 text-xs leading-5 text-zinc-500">These were not selected as project focuses, but they scored below {COACHING_THRESHOLD}/100.</p>
+                  <p className="mb-4 text-sm leading-6 text-zinc-400">These were not selected as project focuses, but they scored below {COACHING_THRESHOLD}/100.</p>
                   <div className="flex flex-col gap-4">
                     {observedFeedback.map((item) => (
                       <div key={item.area}>
@@ -170,28 +191,18 @@ export default function SessionSummaryPage() {
                 </div>
               )}
             </div>
-          </section>
+          </section>}
 
-          <section className="surface-card flex flex-col">
-            <h2 className="section-label mb-4">Current rating</h2>
-            <div className="flex flex-col gap-4">
-              <RatingBar label="Tone" value={session.tone} target={session.targetTone} />
-              <RatingBar label="Body" value={session.body} target={session.targetBody} />
-              <RatingBar label="Facial expressions" value={session.face} target={session.targetFace} />
-            </div>
-            <div className="mt-6 flex flex-1 flex-col">
-              <h3 className="section-label mb-4">Skill breakdown</h3>
-              <div className="min-h-[280px] flex-1">
-                <SkillRadar data={session.radarData} />
-              </div>
-            </div>
-          </section>
-        </div>
+        <section className="surface-card mb-6">
+          <h2 className="text-base font-semibold text-zinc-100">Skill breakdown</h2>
+          <p className="mt-1 text-sm leading-6 text-zinc-400">A combined view of the scored voice and visual delivery metrics available for this session.</p>
+          <div className="mt-3"><SkillRadar data={session.radarData} /></div>
+        </section>
 
         {session.transcript && (
           <section className="surface-card mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="section-label">Transcript</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-zinc-100">Transcript</h2>
               {!editingTranscript && (
                 <button onClick={startEditingTranscript} aria-label="Edit transcript" className="icon-button -mr-2">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -201,8 +212,11 @@ export default function SessionSummaryPage() {
               )}
             </div>
             {editingTranscript ? (
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3">
+                {transcriptError && <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-sm text-red-700">Transcript could not be saved. {transcriptError}</div>}
+                <label htmlFor="session-transcript" className="sr-only">Session transcript</label>
                 <textarea
+                  id="session-transcript"
                   rows={6}
                   value={transcriptDraft}
                   onChange={(e) => setTranscriptDraft(e.target.value)}

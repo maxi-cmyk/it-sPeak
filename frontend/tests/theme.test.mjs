@@ -29,4 +29,6 @@ test("navbar exposes an accessible theme switch", async () => {
   assert.equal(styles.includes("--zinc-900-rgb: 24 24 27"), true);
   assert.equal(styles.includes("--zinc-50-rgb: 250 250 250"), true);
   assert.equal(styles.includes("--performance-cobalt: #2563eb"), true);
+  assert.match(styles, /:root\[data-theme="dark"\] \.theme-toggle \{[\s\S]*?border-color: var\(--text-muted\);[\s\S]*?background: var\(--surface\);[\s\S]*?color: var\(--performance-cobalt-soft\);/);
+  assert.match(styles, /:root\[data-theme="dark"\] \.theme-toggle__thumb \{[\s\S]*?background: var\(--text-primary\);/);
 });
