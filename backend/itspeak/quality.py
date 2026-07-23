@@ -229,5 +229,5 @@ def run_quality_gate(path: str | Path) -> QualityGateReport:
         disposition=disposition, issues=issues, measurements=measurements,
         thresholds={"luminance_low": s.gate_luminance_low, "luminance_high": s.gate_luminance_high, "contrast_min": s.gate_contrast_min, "blur_variance_min": s.gate_blur_variance_min, "face_pixels_min": s.gate_face_pixels_min, "face_presence_min": s.gate_face_presence_min, "audio_rms_min_dbfs": s.gate_audio_rms_min_dbfs, "audio_peak_max_dbfs": s.gate_audio_peak_max_dbfs, "silence_max_ratio": s.gate_silence_max_ratio},
         primary_face_confidence=confidence,
-        limitations=["Spatial-use estimates assume a stationary camera.", "Smile AU6/AU12 values are geometric proxies, not trained FACS detections."],
+        limitations=[],
     )
