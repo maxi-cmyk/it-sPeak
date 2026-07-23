@@ -17,10 +17,34 @@ from .pipeline import analyze_frames_with_artifacts, extract_frames
 from .persistence import get_persistence
 from .progress import detect_stagnation
 from .quality import run_quality_gate
+from .settings import get_settings
 from .task_dispatch import enqueue_analysis
 
 COACHING_THRESHOLD = 80
 logger = logging.getLogger(__name__)
+
+
+def _request_worker_recycle(task) -> None:
+    """Reclaim native ML memory after a production analysis.
+
+    The solo pool cannot recycle child processes because the worker itself is
+    the process that runs the task. A targeted remote shutdown is queued while
+    the task is still active; the solo worker handles it only after this task
+    returns, and Supervisor then starts a clean worker.
+    """
+    if get_settings().environment.lower() != "production":
+        return
+    hostname = getattr(getattr(task, "request", None), "hostname", None)
+    if not hostname:
+        logger.warning("Worker recycle skipped: Celery hostname is unavailable")
+        return
+    try:
+        logger.warning("Scheduling Celery worker recycle after analysis (%s)", hostname)
+        celery_app.control.shutdown(destination=[hostname])
+    except Exception:
+        # Recycling is a memory-safety optimization. A broker/control failure
+        # must not replace the actual analysis result with a task failure.
+        logger.exception("Unable to schedule Celery worker recycle")
 
 
 def _log_stage_timing(stage: str, started_at: float) -> None:
@@ -312,6 +336,7 @@ def analyze_session_task(self, session_id: str) -> dict:
     finally:
         if extracted_audio:
             extracted_audio.unlink(missing_ok=True)
+        _request_worker_recycle(self)
 
 
 @celery_app.task(name="itspeak.cleanup_expired")
