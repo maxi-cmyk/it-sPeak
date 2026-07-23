@@ -23,7 +23,7 @@ export default function ProcessingModal({ job, onComplete, onConfirm, onCancel, 
         <div className={`my-6 rounded-xl border p-4 ${failed ? "border-red-500/30 bg-red-500/10" : waiting ? "border-amber-500/30 bg-amber-500/10" : "border-zinc-800 bg-zinc-950/60"}`}>
           <div className="flex items-start gap-3">
             <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${done ? "bg-emerald-400" : failed ? "bg-red-400" : waiting ? "bg-amber-400" : "bg-blue-400 animate-pulse"}`} />
-            <div><p className="text-sm font-medium text-zinc-100">{STEP_LABELS[job.status] || "Preparing analysis"}</p><p className={`mt-1 text-xs ${failed ? "text-red-700" : "text-zinc-400"}`}>{job.error || job.stage || "Connecting to the analysis service"}</p></div>
+            <div><p className={`text-sm font-medium ${waiting ? "text-readiness" : "text-zinc-100"}`}>{STEP_LABELS[job.status] || "Preparing analysis"}</p><p className={`mt-1 text-xs ${failed ? "text-red-700" : waiting ? "text-readiness" : "text-zinc-400"}`}>{job.error || job.stage || "Connecting to the analysis service"}</p></div>
           </div>
         </div>
         {showProgress && (

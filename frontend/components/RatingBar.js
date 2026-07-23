@@ -5,13 +5,12 @@ export default function RatingBar({ label, value, target }) {
   const barColor = normalizedValue >= (normalizedTarget ?? 80) ? "bg-emerald-500" : normalizedValue < 60 ? "bg-red-500" : "bg-blue-600";
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-zinc-400">{label}</span>
-        <div className="flex items-center gap-2">
+      <div className="flex items-baseline justify-between gap-2 text-sm">
+        <span className="min-w-0 text-zinc-400">{label}</span>
+        <span className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
           <span className="font-semibold text-zinc-50">{Math.round(normalizedValue)}</span>
           <span className="text-xs text-zinc-400">/ 100</span>
-          {normalizedTarget !== null && <span className="text-[10px] text-zinc-400">(target {Math.round(normalizedTarget)})</span>}
-        </div>
+        </span>
       </div>
       <div className="relative h-2 overflow-hidden rounded-full bg-zinc-800" role="meter" aria-label={`${label} score`} aria-valuemin="0" aria-valuemax="100" aria-valuenow={normalizedValue} aria-valuetext={`${Math.round(normalizedValue)} out of 100`}>
         <div
