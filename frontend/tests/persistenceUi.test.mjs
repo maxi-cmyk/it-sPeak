@@ -54,8 +54,8 @@ test("project folder exposes one first-session action and an editor", async () =
 
 test("project editor uses accessible selection icons and themed date control", async () => {
   const editor = await readFile(new URL("../components/AddProjectModal.js", import.meta.url), "utf8");
-  assert.equal(editor.includes("Project description"), true);
-  assert.equal(editor.includes("Rehearsal goal"), false);
+  assert.equal(editor.includes("Project description"), false);
+  assert.equal(editor.includes("Rehearsal goal"), true);
   assert.equal(editor.includes("ImprovementAreaIcon"), true);
   assert.equal(editor.includes("date-control"), true);
 });

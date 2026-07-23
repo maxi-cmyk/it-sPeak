@@ -50,6 +50,12 @@ export function analysisProgress(job = {}) {
   };
 }
 
+export function monotonicProgressValue(previousValue, nextValue) {
+  const previous = Number.isFinite(previousValue) ? previousValue : 0;
+  const next = Number.isFinite(nextValue) ? nextValue : 0;
+  return Math.max(previous, next);
+}
+
 export function visibleAnalysisWarnings(qualityGate, analysis) {
   const warnings = [
     ...(qualityGate?.limitations || []),

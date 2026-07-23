@@ -1,6 +1,7 @@
 "use client";
+import { useEffect, useState } from "react";
 import { eligibleReplacementSessions } from "@/lib/persistenceUi.mjs";
-import { analysisProgress } from "@/lib/analysisPresentation.mjs";
+import { analysisProgress, monotonicProgressValue } from "@/lib/analysisPresentation.mjs";
 
 const STEP_LABELS = { uploading: "Uploading securely", quality_check: "Checking recording quality", queued: "Queued for analysis", processing: "Full analysis in progress", success: "Analysis complete", failure: "Analysis stopped", rejected: "New recording required", needs_confirmation: "Review before continuing" };
 
@@ -9,7 +10,22 @@ export default function ProcessingModal({ job, onComplete, onConfirm, onCancel, 
   const failed = ["failure", "rejected"].includes(job.status);
   const waiting = job.status === "needs_confirmation";
   const replacing = job.status === "replacement_required";
-  const progress = analysisProgress(job);
+  const calculatedProgress = analysisProgress(job);
+  const progressKey = job.sessionId || `pending:${job.status}`;
+  const [progressFloor, setProgressFloor] = useState({ key: progressKey, value: calculatedProgress.value });
+  const progressValue = progressFloor.key === progressKey
+    ? monotonicProgressValue(progressFloor.value, calculatedProgress.value)
+    : calculatedProgress.value;
+  const progress = { ...calculatedProgress, value: progressValue };
+
+  useEffect(() => {
+    setProgressFloor((current) => (
+      current.key === progressKey && current.value === progressValue
+        ? current
+        : { key: progressKey, value: progressValue }
+    ));
+  }, [progressKey, progressValue]);
+
   const showProgress = !replacing && !failed;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="analysis-title">
@@ -23,7 +39,10 @@ export default function ProcessingModal({ job, onComplete, onConfirm, onCancel, 
         <div className={`my-6 rounded-xl border p-4 ${failed ? "border-red-500/30 bg-red-500/10" : waiting ? "border-amber-500/30 bg-amber-500/10" : "border-zinc-800 bg-zinc-950/60"}`}>
           <div className="flex items-start gap-3">
             <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${done ? "bg-emerald-400" : failed ? "bg-red-400" : waiting ? "bg-amber-400" : "bg-blue-400 animate-pulse"}`} />
-            <div><p className="text-sm font-medium text-zinc-100">{STEP_LABELS[job.status] || "Preparing analysis"}</p><p className={`mt-1 text-xs ${failed ? "text-red-700" : "text-zinc-400"}`}>{job.error || job.stage || "Connecting to the analysis service"}</p></div>
+            <div>
+              <p className={`text-sm font-medium ${waiting ? "text-amber-100" : "text-zinc-100"}`}>{STEP_LABELS[job.status] || "Preparing analysis"}</p>
+              <p className={`mt-1 text-xs ${failed ? "text-red-700" : waiting ? "text-amber-200/80" : "text-zinc-400"}`}>{job.error || job.stage || "Connecting to the analysis service"}</p>
+            </div>
           </div>
         </div>
         {showProgress && (
@@ -60,7 +79,7 @@ export default function ProcessingModal({ job, onComplete, onConfirm, onCancel, 
         )}
         {waiting && <p className="mb-6 text-xs leading-5 text-zinc-500">Continuing keeps these limitations attached to your results. Re-recording will produce more trustworthy feedback.</p>}
         <div className="flex gap-3">
-          {done ? <button onClick={onComplete} className="btn-primary w-full">View results <span aria-hidden="true">→</span></button> : waiting ? <><button onClick={onCancel} className="btn-secondary flex-1">Re-record</button><button onClick={onConfirm} className="inline-flex min-h-10 flex-1 items-center justify-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-50 transition-colors hover:bg-amber-400">Continue anyway</button></> : failed ? <button onClick={onCancel} className="inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-red-500/40 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-500/10">Close and re-record</button> : <button onClick={onCancel} className="btn-secondary w-full">Cancel analysis</button>}
+          {done ? <button onClick={onComplete} className="btn-primary w-full">View results <span aria-hidden="true">→</span></button> : waiting ? <><button onClick={onCancel} className="btn-secondary flex-1">Re-record</button><button onClick={onConfirm} className="inline-flex min-h-10 flex-1 items-center justify-center rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-amber-950 transition-colors hover:bg-amber-300">Continue anyway</button></> : failed ? <button onClick={onCancel} className="inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-red-500/40 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-500/10">Close and re-record</button> : <button onClick={onCancel} className="btn-secondary w-full">Cancel analysis</button>}
         </div>
         </>}
         {replacing && <button onClick={onCancel} className="btn-secondary w-full">Keep all current sessions</button>}

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { analysisProgress, splitMetricPhrases, visibleAnalysisWarnings } from "../lib/analysisPresentation.mjs";
+import { analysisProgress, monotonicProgressValue, splitMetricPhrases, visibleAnalysisWarnings } from "../lib/analysisPresentation.mjs";
 
 test("analysis progress prefers reported progress without showing completion early", () => {
   assert.deepEqual(analysisProgress({ status: "processing", progress: { percent: 72.4 } }), { value: 72, source: "reported" });
@@ -13,6 +13,12 @@ test("analysis progress follows known backend stages when no percentage is suppl
   assert.equal(analysisProgress({ status: "quality_check" }).value, 30);
   assert.equal(analysisProgress({ status: "processing", stage: "Analyzing voice and transcript" }).value, 75);
   assert.equal(analysisProgress({ status: "processing", stage: "Generating grounded coaching" }).value, 90);
+});
+
+test("analysis progress never regresses while polling the same session", () => {
+  assert.equal(monotonicProgressValue(75, 60), 75);
+  assert.equal(monotonicProgressValue(75, 90), 90);
+  assert.equal(monotonicProgressValue(undefined, 30), 30);
 });
 
 test("metric phrase splitting marks measured values without altering surrounding copy", () => {
