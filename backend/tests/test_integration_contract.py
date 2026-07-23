@@ -33,12 +33,12 @@ class SessionFlowContractTest(unittest.TestCase):
             patch("itspeak.api.create_session", return_value=(manifest, "secret")),
             patch("itspeak.api.save_session_video", new=AsyncMock(return_value=Path("/tmp/private.mp4"))),
             patch("itspeak.api.update_manifest"),
-            patch("itspeak.api.quality_check_task.delay") as delay,
+            patch("itspeak.api.enqueue_quality_check") as enqueue,
         ):
             accepted = asyncio.run(create_analysis_session(upload, self.project["id"], Archetype.CORPORATE_BOARD, "Board", None, AuthPrincipal("user-1")))
         self.assertEqual(accepted.session_id, manifest["session_id"])
         self.assertEqual(accepted.access_token, "secret")
-        delay.assert_called_once_with(manifest["session_id"])
+        enqueue.assert_called_once_with(manifest["session_id"])
 
     def test_warning_gate_pauses_before_full_analysis(self):
         report = QualityGateReport(disposition=QualityDisposition.CONFIRM, measurements=QualityMeasurements(sampled_frames=10))
@@ -46,7 +46,7 @@ class SessionFlowContractTest(unittest.TestCase):
             patch("itspeak.jobs.video_path", return_value=Path("/tmp/video.mp4")),
             patch("itspeak.jobs.run_quality_gate", return_value=report),
             patch("itspeak.jobs.update_manifest") as update,
-            patch("itspeak.jobs._enqueue_analysis") as enqueue,
+            patch("itspeak.jobs.enqueue_analysis") as enqueue,
         ):
             quality_check_task.run("a081b0b6-3264-40ac-8e42-ff03e907ca27")
         enqueue.assert_not_called()
@@ -72,7 +72,7 @@ class SessionFlowContractTest(unittest.TestCase):
                 patch("itspeak.jobs.video_path", return_value=video), patch("itspeak.jobs.extract_frames", return_value=object()),
                 patch("itspeak.jobs.analyze_frames_with_artifacts", return_value=(visual, {"version": "1.0", "frames": []})),
                 patch("itspeak.jobs.write_landmarks") as write_landmarks, patch("itspeak.jobs.normalize_scores", return_value=scores),
-                patch("itspeak.jobs.extract_audio_track", return_value=audio), patch("itspeak.jobs.analyze_audio", return_value=audio_payload),
+                patch("itspeak.jobs.extract_audio_track", return_value=audio), patch("itspeak.audio.analyze_audio", return_value=audio_payload),
                 patch("itspeak.jobs.CoachingService", return_value=coach), patch("itspeak.jobs.update_manifest") as update,
             ):
                 report = analyze_session_task.run(session_id)

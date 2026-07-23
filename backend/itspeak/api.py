@@ -14,10 +14,10 @@ from fastapi.responses import Response, StreamingResponse
 from .archetypes import list_archetypes
 from .auth import AuthPrincipal, get_auth_principal
 from .artifact_store import authorize, create_session, landmarks_path, read_manifest, session_dir, update_manifest, video_path
-from .jobs import _enqueue_analysis, quality_check_task
 from .models import Archetype, CoachingReport, ImprovementArea, ProjectCreate, ProjectUpdate, QualityGateReport, SessionAccepted, SessionStatus, TranscriptUpdate
 from .persistence import NotFoundError, PersistenceError, ReplacementRequired, get_persistence
 from .settings import get_settings
+from .task_dispatch import enqueue_analysis, enqueue_quality_check
 from .uploads import save_session_video
 
 settings = get_settings()
@@ -76,8 +76,7 @@ async def create_analysis_session(
         persistence.create_pending_session({"id": manifest["session_id"], "project_id": project_id, "owner_id": principal.user_id, "archetype_key": archetype.value, "audience_context": audience_context[:300], "replace_session_id": replace_session_id})
         path = await save_session_video(manifest["session_id"], file)
         update_manifest(manifest["session_id"], video_filename=path.name)
-        task = quality_check_task.delay(manifest["session_id"])
-        persistence.update_session(manifest["session_id"], {"task_id": task.id})
+        enqueue_quality_check(manifest["session_id"])
     except ReplacementRequired as exc:
         shutil.rmtree(session_dir(manifest["session_id"]), ignore_errors=True)
         raise HTTPException(status_code=409, detail={"code": "replacement_required", "message": str(exc), "candidates": exc.candidates}) from exc
@@ -130,7 +129,7 @@ def confirm_session(session_id: str, principal: AuthPrincipal = Depends(get_auth
         raise HTTPException(status_code=404, detail="Session not found")
     if manifest["status"] != "needs_confirmation":
         raise HTTPException(status_code=409, detail="This session is not waiting for confirmation")
-    _enqueue_analysis(session_id)
+    enqueue_analysis(session_id)
     return get_session(session_id, principal)
 
 

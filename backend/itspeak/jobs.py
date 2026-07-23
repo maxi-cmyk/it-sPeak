@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+import gc
 import logging
 import time
 from pathlib import Path
 
 from .artifact_store import cleanup_expired, landmarks_path, read_manifest, update_manifest, video_path, write_landmarks
-from .audio import analyze_audio
 from .celery_app import celery_app
 from .coaching import CoachingService
 from .config import compute_progress, normalize_scores
@@ -17,20 +17,27 @@ from .pipeline import analyze_frames_with_artifacts, extract_frames
 from .persistence import get_persistence
 from .progress import detect_stagnation
 from .quality import run_quality_gate
+from .task_dispatch import enqueue_analysis
 
 COACHING_THRESHOLD = 80
 logger = logging.getLogger(__name__)
 
 
 def _log_stage_timing(stage: str, started_at: float) -> None:
-    logger.warning("Analysis timing: %s completed in %.3fs", stage, time.perf_counter() - started_at)
-
-
-def _enqueue_analysis(session_id: str):
-    result = analyze_session_task.delay(session_id)
-    update_manifest(session_id, status="queued", stage="Waiting for full analysis", analysis_task_id=result.id)
-    get_persistence().update_session(session_id, {"status": "queued", "stage": "Waiting for full analysis", "task_id": result.id})
-    return result
+    rss = "unknown"
+    try:
+        for line in Path("/proc/self/status").read_text().splitlines():
+            if line.startswith("VmRSS:"):
+                rss = f"{int(line.split()[1]) / 1024:.1f}MB"
+                break
+    except (OSError, ValueError, IndexError):
+        pass
+    logger.warning(
+        "Analysis timing: %s completed in %.3fs (worker RSS: %s)",
+        stage,
+        time.perf_counter() - started_at,
+        rss,
+    )
 
 
 @celery_app.task(name="itspeak.quality_check", bind=True)
@@ -49,7 +56,7 @@ def quality_check_task(self, session_id: str) -> dict:
         else:
             update_manifest(session_id, quality_gate=payload)
             get_persistence().update_session(session_id, {"quality_gate": payload})
-            _enqueue_analysis(session_id)
+            enqueue_analysis(session_id)
         return payload
     except Exception as exc:
         update_manifest(session_id, status="failure", stage="Quality check failed", error=str(exc))
@@ -239,13 +246,23 @@ def analyze_session_task(self, session_id: str) -> dict:
         baseline_payload = manifest.get("baseline_scores")
         baseline = NormalizedScores(**baseline_payload) if baseline_payload else None
         visual_started = time.perf_counter()
-        visual, landmarks = analyze_frames_with_artifacts(extract_frames(str(video_path(session_id))))
+        frame_batch = extract_frames(str(video_path(session_id)))
+        visual, landmarks = analyze_frames_with_artifacts(frame_batch)
+        del frame_batch
         _log_stage_timing("visual analysis", visual_started)
         write_landmarks(session_id, landmarks)
+        cleanup_started = time.perf_counter()
+        del landmarks
+        gc.collect()
+        _log_stage_timing("visual memory cleanup", cleanup_started)
         scores = normalize_scores(visual, archetype)
 
         update_manifest(session_id, status="processing", stage="Analyzing voice and transcript")
         get_persistence().update_session(session_id, {"status": "processing", "stage": "Analyzing voice and transcript"})
+        # Import Librosa/Numba only after MediaPipe has released its visual
+        # models and the decoded frame batch has gone out of scope.
+        from .audio import analyze_audio
+
         audio_started = time.perf_counter()
         extracted_audio = extract_audio_track(str(video_path(session_id)))
         audio = AudioAnalysisResult.model_validate(analyze_audio(extracted_audio))
