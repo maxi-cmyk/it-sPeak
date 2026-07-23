@@ -221,6 +221,32 @@ Press `Ctrl+C` in each terminal to stop the application. The backend supervisor 
 
 For individual commands and diagnostics, use the [frontend guide](frontend/README.md) and [backend guide](backend/README.md).
 
+## Deploy the backend container
+
+The production image under `backend/` runs FastAPI, one Celery worker, and one
+Celery Beat scheduler under Supervisor. Keeping them in one service is
+intentional: pending uploads are filesystem-backed, so the API and worker must
+share the same persistent artifact volume.
+
+On the selected container platform:
+
+1. Create a Docker service from this repository, using `backend/` as the root
+   directory and `Dockerfile` as the Dockerfile path. Use the `linux/amd64`
+   architecture required by the pinned MediaPipe release.
+2. Create a managed Redis service with persistence enabled.
+3. Mount persistent storage at `/data` and keep the service at exactly one
+   replica.
+4. Set the health-check path to `/healthz`. The platform supplies `PORT`; the
+   container binds FastAPI to `0.0.0.0:$PORT`.
+5. Add the production environment variables listed in the
+   [backend deployment guide](backend/README.md#production-container).
+6. Deploy `main`, then confirm the logs show the API, worker, and Beat processes
+   running before exercising a real upload.
+
+Do not deploy the API and worker as isolated services with separate filesystems.
+Successful artifacts are committed to Supabase Storage, but pending analysis
+jobs still require their shared mounted directory.
+
 ## Current boundaries
 
 - Recordings must be English-language videos no longer than three minutes.
