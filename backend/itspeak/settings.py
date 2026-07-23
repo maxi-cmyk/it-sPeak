@@ -31,6 +31,20 @@ class Settings(BaseSettings):
     gate_face_pixels_min: int = 200
     gate_face_presence_min: float = 0.70
     gate_pose_presence_min: float = 0.70
+
+    # Dynamic face-distance validation. Distance is judged relative to body
+    # visibility and facial tracking confidence instead of a fixed pixel floor.
+    # A face whose tracking confidence meets this threshold is treated as fully
+    # readable regardless of how small it looks in a full-body shot.
+    gate_face_tracking_confidence_min: float = 0.5
+    # Fraction of sampled frames that must expose lower-body keypoints (knees /
+    # ankles) before framing is classed as a full-body standing shot.
+    gate_full_body_min_ratio: float = 0.5
+    # In normal human proportions the head is ~12-15% of standing height; these
+    # (generously padded) bounds decide whether a small face is simply the
+    # natural result of a correct full-body framing.
+    gate_head_height_ratio_min: float = 0.08
+    gate_head_height_ratio_max: float = 0.24
     gate_audio_rms_min_dbfs: float = -35.0
     gate_audio_peak_max_dbfs: float = -1.0
     gate_silence_max_ratio: float = 0.40

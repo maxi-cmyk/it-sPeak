@@ -108,8 +108,10 @@ class ArchetypeScoringTest(unittest.TestCase):
         self.assertLess(keynote.expression_score, corporate.expression_score)
 
     def test_moderate_delivery_scores_well_after_loosening(self):
-        """A middling posture/expression/gesture recording should now land in
-        the strong range instead of collapsing, for the strictest archetype."""
+        """A middling expression/gesture recording should land in the strong
+        range instead of collapsing, for the strictest archetype. (Posture is
+        intentionally excluded here — it now follows a stricter curve, covered
+        by ``test_posture_scoring_no_longer_saturates``.)"""
         moderate = VideoAnalysisResult(
             face=FaceMetrics(eye_contact_ratio=0.6, expression_variance=0.10, frames_with_face=100),
             body=BodyMetrics(
@@ -119,9 +121,33 @@ class ArchetypeScoringTest(unittest.TestCase):
             frames_analyzed=100, sample_fps=5.0, duration_seconds=20.0,
         )
         scores = normalize_scores(moderate, Archetype.CORPORATE_BOARD)
-        self.assertGreaterEqual(scores.posture_score, 80)
         self.assertGreaterEqual(scores.expression_score, 80)
         self.assertGreaterEqual(scores.gesture_score, 80)
+
+    def test_posture_scoring_no_longer_saturates(self):
+        """Posture must not hand out full marks for a merely-normal proxy.
+
+        Normal upright posture (proxy ~0.7) should land in a mid band (~50-60),
+        genuinely good, consistent posture (~0.92) should reach 80-100, and only
+        a near-perfect proxy should approach the ceiling.
+        """
+        def posture_score(alignment: float, archetype: Archetype = Archetype.CORPORATE_BOARD) -> float:
+            result = VideoAnalysisResult(
+                face=FaceMetrics(frames_with_face=100),
+                body=BodyMetrics(posture_alignment=alignment, frames_with_pose=100),
+                frames_analyzed=100, sample_fps=5.0, duration_seconds=20.0,
+            )
+            return normalize_scores(result, archetype).posture_score
+
+        self.assertGreaterEqual(posture_score(0.70), 45)
+        self.assertLessEqual(posture_score(0.70), 65)
+        self.assertLess(posture_score(0.80), 80)
+        self.assertGreaterEqual(posture_score(0.92), 80)
+        self.assertLessEqual(posture_score(0.92), 100)
+        # Every archetype rewards excellent posture but none maxes on "normal".
+        for archetype in ENABLED_ARCHETYPES:
+            self.assertLess(posture_score(0.70, archetype), 80)
+            self.assertGreaterEqual(posture_score(1.0, archetype), 90)
 
     def test_all_archetypes_produce_valid_bounded_scores(self):
         rich = _rich_result()

@@ -123,7 +123,9 @@ ARCHETYPE_PRESETS: dict[Archetype, ArchetypeConfig] = {
         eye_contact=FloorBand(low=0.35, ideal=0.80),
         # Controlled but not frozen expression.
         expression=TargetBand(ideal=0.12, tol_low=0.22, tol_high=0.60),
-        posture=FloorBand(low=0.15, ideal=0.55),
+        # Posture scale is compressed so a merely-normal upright proxy (~0.7)
+        # lands ~50 and only steady, genuinely square posture reaches 80-100.
+        posture=FloorBand(low=0.40, ideal=1.0),
         # Minimal, deliberate gestures — a low ideal, punished if busy.
         gesture_frequency=TargetBand(ideal=0.25, tol_low=0.45, tol_high=0.85),
         gesture_range=TargetBand(ideal=0.20, tol_low=0.40, tol_high=0.80),
@@ -151,7 +153,7 @@ ARCHETYPE_PRESETS: dict[Archetype, ArchetypeConfig] = {
         eye_contact=FloorBand(low=0.25, ideal=0.65),
         # Wants high expressiveness.
         expression=FloorBand(low=0.02, ideal=0.14),
-        posture=FloorBand(low=0.12, ideal=0.50),
+        posture=FloorBand(low=0.35, ideal=0.98),
         # Rewards frequent, large gestures.
         gesture_frequency=TargetBand(ideal=0.70, tol_low=0.90, tol_high=0.90),
         gesture_range=TargetBand(ideal=0.75, tol_low=0.90, tol_high=0.85),
@@ -180,7 +182,7 @@ ARCHETYPE_PRESETS: dict[Archetype, ArchetypeConfig] = {
         ),
         eye_contact=FloorBand(low=0.30, ideal=0.72),
         expression=FloorBand(low=0.02, ideal=0.12),
-        posture=FloorBand(low=0.15, ideal=0.55),
+        posture=FloorBand(low=0.40, ideal=1.0),
         gesture_frequency=TargetBand(ideal=0.50, tol_low=0.75, tol_high=0.85),
         gesture_range=TargetBand(ideal=0.50, tol_low=0.75, tol_high=0.85),
         openness=FloorBand(low=0.12, ideal=0.42),
@@ -208,7 +210,7 @@ ARCHETYPE_PRESETS: dict[Archetype, ArchetypeConfig] = {
         ),
         eye_contact=FloorBand(low=0.25, ideal=0.60),
         expression=TargetBand(ideal=0.14, tol_low=0.24, tol_high=0.65),
-        posture=FloorBand(low=0.15, ideal=0.55),
+        posture=FloorBand(low=0.40, ideal=1.0),
         gesture_frequency=TargetBand(ideal=0.35, tol_low=0.60, tol_high=0.85),
         gesture_range=TargetBand(ideal=0.30, tol_low=0.55, tol_high=0.82),
         openness=FloorBand(low=0.10, ideal=0.38),
@@ -235,7 +237,7 @@ ARCHETYPE_PRESETS: dict[Archetype, ArchetypeConfig] = {
         ),
         eye_contact=FloorBand(low=0.20, ideal=0.55),
         expression=FloorBand(low=0.02, ideal=0.13),
-        posture=FloorBand(low=0.10, ideal=0.45),
+        posture=FloorBand(low=0.32, ideal=0.96),
         gesture_frequency=TargetBand(ideal=0.50, tol_low=0.80, tol_high=0.95),
         gesture_range=TargetBand(ideal=0.50, tol_low=0.80, tol_high=0.95),
         openness=FloorBand(low=0.10, ideal=0.42),
@@ -262,7 +264,7 @@ ARCHETYPE_PRESETS: dict[Archetype, ArchetypeConfig] = {
         ),
         eye_contact=FloorBand(low=0.35, ideal=0.78),
         expression=TargetBand(ideal=0.12, tol_low=0.22, tol_high=0.60),
-        posture=FloorBand(low=0.18, ideal=0.58),
+        posture=FloorBand(low=0.42, ideal=1.0),
         gesture_frequency=TargetBand(ideal=0.30, tol_low=0.55, tol_high=0.82),
         gesture_range=TargetBand(ideal=0.25, tol_low=0.50, tol_high=0.80),
         openness=FloorBand(low=0.15, ideal=0.42),

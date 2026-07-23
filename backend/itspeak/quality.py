@@ -23,6 +23,12 @@ from .pipeline import extract_frames
 from .settings import get_settings
 
 
+# MediaPipe BlazePose landmark indices used only for *framing* classification
+# (never fed back into the scoring engines).
+_POSE_CORE = (11, 12, 23, 24)  # shoulders + hips
+_POSE_LOWER_BODY = (25, 26, 27, 28)  # knees + ankles
+
+
 @dataclass(frozen=True)
 class MediaProbe:
     duration: float
@@ -125,6 +131,83 @@ def _issue(code: str, severity: str, title: str, message: str, action: str) -> Q
     return QualityIssue(code=code, severity=severity, title=title, message=message, action=action)
 
 
+def evaluate_face_distance(
+    *,
+    median_face_width_px: float | None,
+    median_face_height_px: float | None,
+    face_tracking_confidence: float,
+    full_body_ratio: float,
+    head_to_body_ratio: float | None,
+    min_face_px: float,
+    min_tracking_confidence: float,
+    full_body_min_ratio: float,
+    head_ratio_bounds: tuple[float, float],
+) -> QualityIssue | None:
+    """Decide whether the speaker's face is usable, adapting to framing.
+
+    Distance is judged *relative* to body visibility and facial tracking
+    confidence rather than a fixed pixel floor, so a user who steps back to
+    show their full posture is not falsely told their face is "too far":
+
+    * Confidence first — if facial tracking confidence is at/above
+      ``min_tracking_confidence`` the face is treated as fully readable no
+      matter how small it appears (a full-body shot legitimately shrinks it).
+    * Full body detected — the face is expected to be a small, proportional
+      slice of standing height (~12-15%). A proportional face is never flagged
+      as "too far"; a marginally low tracking confidence only produces a soft,
+      non-blocking suggestion.
+    * Upper-body / seated / mid-shot (no lower-body keypoints) — the face is
+      compared against the mid-shot pixel reference and flagged only when it is
+      *both* small and poorly tracked.
+
+    All calculations are guarded against missing data / zero division and the
+    worst outcome is a single non-blocking ``warning`` issue (never an
+    ``error``), so this can never hard-block a standard-distance recording.
+    """
+    if median_face_width_px is None or median_face_height_px is None:
+        # No face was measured at all — face-presence checks own that failure.
+        return None
+
+    readable = face_tracking_confidence >= min_tracking_confidence
+    full_body = full_body_ratio >= full_body_min_ratio
+    lo, hi = head_ratio_bounds
+    proportional = head_to_body_ratio is not None and lo <= head_to_body_ratio <= hi
+
+    if full_body:
+        # A proportional full-body framing is correct on purpose.
+        if proportional or readable:
+            if readable:
+                return None
+            return _issue(
+                "distance_precision",
+                "warning",
+                "Full body detected — face is naturally smaller",
+                "Full body detected. Facial expression tracking precision may be slightly reduced due to distance.",
+                "This is fine for posture and body-language analysis. To sharpen facial metrics you can optionally step a little closer.",
+            )
+        # Full body, but the face is disproportionately tiny and weakly tracked.
+        return _issue(
+            "distance_precision",
+            "warning",
+            "Face is small relative to the frame",
+            "Facial expression tracking precision may be reduced at this distance.",
+            "Keep your body in view but step slightly closer, or raise the camera to frame your upper body.",
+        )
+
+    # Upper-body / seated / mid-shot: trust confidence, fall back to pixels.
+    if readable:
+        return None
+    if min(median_face_width_px, median_face_height_px) < min_face_px:
+        return _issue(
+            "face_pixels",
+            "warning",
+            "Face is too small for detailed analysis",
+            f"Median face size is {median_face_width_px:.0f}×{median_face_height_px:.0f}px and tracking confidence is low.",
+            f"Move closer so your face is at least {int(min_face_px)}×{int(min_face_px)} pixels.",
+        )
+    return None
+
+
 def run_quality_gate(path: str | Path) -> QualityGateReport:
     """Sample at most 24 frames and return a pass/confirm/reject report."""
     import mediapipe as mp
@@ -164,6 +247,8 @@ def run_quality_gate(path: str | Path) -> QualityGateReport:
     face_confidences: list[float] = []
     max_faces = 0
     pose_hits = 0
+    lower_body_hits = 0
+    body_height_ratios: list[float] = []
     previous = None
     face_mesh = mp.solutions.face_mesh.FaceMesh(static_image_mode=False, max_num_faces=5, refine_landmarks=True, min_detection_confidence=s.min_detection_confidence, min_tracking_confidence=s.min_tracking_confidence)
     pose = mp.solutions.pose.Pose(static_image_mode=False, smooth_landmarks=True, min_detection_confidence=s.min_detection_confidence, min_tracking_confidence=s.min_tracking_confidence)
@@ -184,19 +269,30 @@ def run_quality_gate(path: str | Path) -> QualityGateReport:
                 face_widths.append((primary[2] - primary[0]) * probe.width)
                 face_heights.append((primary[3] - primary[1]) * probe.height)
             pose_result = pose.process(frame).pose_landmarks
-            if pose_result and np.mean([pose_result.landmark[i].visibility for i in (11, 12, 23, 24)]) >= 0.55:
-                pose_hits += 1
+            if pose_result:
+                lm = pose_result.landmark
+                if np.mean([lm[i].visibility for i in _POSE_CORE]) >= 0.55:
+                    pose_hits += 1
+                if np.mean([lm[i].visibility for i in _POSE_LOWER_BODY]) >= 0.5:
+                    lower_body_hits += 1
+                visible_y = [lm[i].y for i in range(len(lm)) if lm[i].visibility >= 0.5]
+                if visible_y:
+                    body_height_ratios.append(max(0.0, max(visible_y) - min(visible_y)))
     finally:
         face_mesh.close()
         pose.close()
 
     audio = _audio_stats(path, probe.duration) if probe.has_audio else {"rms": None, "peak": None, "noise_floor": None, "silence_ratio": None}
+    face_tracking_confidence = float(np.median(face_confidences)) if face_confidences else None
+    median_body_height_ratio = float(np.median(body_height_ratios)) if body_height_ratios else None
     measurements = QualityMeasurements(
         duration_seconds=probe.duration, source_width=probe.width, source_height=probe.height,
         sampled_frames=len(frames), median_luminance=float(np.median(luminance)), median_contrast=float(np.median(contrast)),
         median_blur_variance=float(np.median(blur)), median_face_width_px=float(np.median(face_widths)) if face_widths else None,
         median_face_height_px=float(np.median(face_heights)) if face_heights else None,
-        face_presence_ratio=len(face_boxes) / len(frames), pose_visibility_ratio=pose_hits / len(frames), max_faces=max_faces,
+        face_presence_ratio=len(face_boxes) / len(frames), pose_visibility_ratio=pose_hits / len(frames),
+        full_body_ratio=lower_body_hits / len(frames), median_body_height_ratio=median_body_height_ratio,
+        face_tracking_confidence=face_tracking_confidence, max_faces=max_faces,
         audio_rms_dbfs=audio["rms"], audio_peak_dbfs=audio["peak"], audio_noise_floor_dbfs=audio["noise_floor"], silence_ratio=audio["silence_ratio"],
     )
     if measurements.face_presence_ratio < s.min_valid_frame_ratio:
@@ -209,8 +305,25 @@ def run_quality_gate(path: str | Path) -> QualityGateReport:
         issues.append(_issue("contrast", "warning", "Image contrast is low", f"Contrast deviation is {measurements.median_contrast:.1f}.", "Use more even lighting and clean the camera lens."))
     if measurements.median_blur_variance is not None and measurements.median_blur_variance < s.gate_blur_variance_min:
         issues.append(_issue("blur", "warning", "Video appears soft or blurred", "Facial detail may be unreliable.", "Stabilize the camera, clean the lens, and tap to focus."))
-    if face_widths and (measurements.median_face_width_px < s.gate_face_pixels_min or measurements.median_face_height_px < s.gate_face_pixels_min):
-        issues.append(_issue("face_pixels", "warning", "Face is too small for detailed analysis", f"Median face size is {measurements.median_face_width_px:.0f}×{measurements.median_face_height_px:.0f}px.", "Move closer so your face is at least 200×200 pixels."))
+    if face_widths:
+        head_to_body_ratio = None
+        if measurements.median_face_height_px is not None and median_body_height_ratio and probe.height > 0:
+            body_height_px = median_body_height_ratio * probe.height
+            if body_height_px > 0:
+                head_to_body_ratio = measurements.median_face_height_px / body_height_px
+        distance_issue = evaluate_face_distance(
+            median_face_width_px=measurements.median_face_width_px,
+            median_face_height_px=measurements.median_face_height_px,
+            face_tracking_confidence=face_tracking_confidence or 0.0,
+            full_body_ratio=measurements.full_body_ratio,
+            head_to_body_ratio=head_to_body_ratio,
+            min_face_px=s.gate_face_pixels_min,
+            min_tracking_confidence=s.gate_face_tracking_confidence_min,
+            full_body_min_ratio=s.gate_full_body_min_ratio,
+            head_ratio_bounds=(s.gate_head_height_ratio_min, s.gate_head_height_ratio_max),
+        )
+        if distance_issue is not None:
+            issues.append(distance_issue)
     if measurements.pose_visibility_ratio < s.gate_pose_presence_min:
         issues.append(_issue("partial_body", "warning", "Upper body is not consistently visible", "Shoulders and hips are not visible often enough for body metrics.", "Frame your shoulders, torso and hands throughout the recording."))
     if max_faces > 1:
@@ -227,7 +340,7 @@ def run_quality_gate(path: str | Path) -> QualityGateReport:
     confidence = MetricConfidence.HIGH if mean_conf >= 0.75 else MetricConfidence.MEDIUM if mean_conf >= 0.5 else MetricConfidence.LOW if mean_conf else MetricConfidence.INSUFFICIENT
     return QualityGateReport(
         disposition=disposition, issues=issues, measurements=measurements,
-        thresholds={"luminance_low": s.gate_luminance_low, "luminance_high": s.gate_luminance_high, "contrast_min": s.gate_contrast_min, "blur_variance_min": s.gate_blur_variance_min, "face_pixels_min": s.gate_face_pixels_min, "face_presence_min": s.gate_face_presence_min, "audio_rms_min_dbfs": s.gate_audio_rms_min_dbfs, "audio_peak_max_dbfs": s.gate_audio_peak_max_dbfs, "silence_max_ratio": s.gate_silence_max_ratio},
+        thresholds={"luminance_low": s.gate_luminance_low, "luminance_high": s.gate_luminance_high, "contrast_min": s.gate_contrast_min, "blur_variance_min": s.gate_blur_variance_min, "face_pixels_min": s.gate_face_pixels_min, "face_tracking_confidence_min": s.gate_face_tracking_confidence_min, "face_presence_min": s.gate_face_presence_min, "audio_rms_min_dbfs": s.gate_audio_rms_min_dbfs, "audio_peak_max_dbfs": s.gate_audio_peak_max_dbfs, "silence_max_ratio": s.gate_silence_max_ratio},
         primary_face_confidence=confidence,
         limitations=["Spatial-use estimates assume a stationary camera.", "Smile AU6/AU12 values are geometric proxies, not trained FACS detections."],
     )

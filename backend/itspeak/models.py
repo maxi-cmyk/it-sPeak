@@ -97,6 +97,13 @@ class QualityMeasurements(BaseModel):
     median_face_height_px: Optional[float] = None
     face_presence_ratio: float = 0.0
     pose_visibility_ratio: float = 0.0
+    # Fraction of frames exposing lower-body keypoints (full-body framing) and
+    # the median pose bounding-box height as a fraction of the frame, used to
+    # judge face distance relative to body visibility rather than raw pixels.
+    full_body_ratio: float = 0.0
+    median_body_height_ratio: Optional[float] = None
+    # Median facial tracking confidence (0-1) of the selected primary face.
+    face_tracking_confidence: Optional[float] = None
     max_faces: int = 0
     audio_rms_dbfs: Optional[float] = None
     audio_peak_dbfs: Optional[float] = None
