@@ -1,10 +1,11 @@
 {
+    "scoring_version": "yin-semitone-v2",
     "archetype": "Singapore Formal/Academic Rehearsal",
-    "dataset_source": "Prototype benchmark: good-test.m4a",
+    "dataset_source": "YIN semitone calibration: voice-testing1 and voice-testing2; voice-testing3 holdout",
     "calibrated_metrics": {
         "target_wpm": 160.7,
-        "target_pitch_std": 36.37,
+        "target_pitch_variation_std_semitones": 4.8,
         "wpm_tolerance_margin": 12.0,
-        "pitch_tolerance_margin": 20.0
+        "pitch_variation_tolerance_semitones": 1.3
     }
 }

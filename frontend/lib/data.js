@@ -10,6 +10,8 @@ export function sessionFromApi(session) {
     name: `Session ${session.sequence_number}`,
     sequenceNumber: session.sequence_number,
     isBaseline: session.sequence_number === 1,
+    reportVersion: result.report_version || result.report?.version || view.reportVersion,
+    audioScoringVersion: result.report?.audio?.scoring_version || view.audioScoringVersion,
     date: (session.completed_at || session.created_at).slice(0, 10),
     overallScore: Math.round(Number(result.overall_score ?? view.overallScore)),
     score: Math.round(Number(result.overall_score ?? view.overallScore)),

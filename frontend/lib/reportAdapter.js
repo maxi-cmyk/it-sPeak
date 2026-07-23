@@ -208,6 +208,8 @@ export function reportToSession(report, sessionId, projectId = "1", qualityGate 
   ].filter(([, score]) => Number.isFinite(score));
   return {
     id: sessionId, projectId, name: "Latest analysis", overallScore: averageAvailable(...pillars), score: averageAvailable(...pillars), tone, body: body ?? 0, face: face ?? 0,
+    reportVersion: report.version || "1.0",
+    audioScoringVersion: report.audio.scoring_version || "pyin-hz-v1",
     targetTone: 85, targetBody: 85, targetFace: 85, date: new Date().toISOString().slice(0, 10),
     duration: `${Math.round(report.raw_analysis.duration_seconds)}s`, feedback, observedFeedback, improvementGuidance,
     transcript: report.audio.transcript.text, audioMetrics: report.audio.readable_metrics,

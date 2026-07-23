@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+import time
 from pathlib import Path
 
 from .artifact_store import cleanup_expired, landmarks_path, read_manifest, update_manifest, video_path, write_landmarks
@@ -17,6 +19,11 @@ from .progress import detect_stagnation
 from .quality import run_quality_gate
 
 COACHING_THRESHOLD = 80
+logger = logging.getLogger(__name__)
+
+
+def _log_stage_timing(stage: str, started_at: float) -> None:
+    logger.warning("Analysis timing: %s completed in %.3fs", stage, time.perf_counter() - started_at)
 
 
 def _enqueue_analysis(session_id: str):
@@ -231,18 +238,24 @@ def analyze_session_task(self, session_id: str) -> dict:
         improvement_areas = [ImprovementArea(area) for area in manifest.get("improvement_areas", [area.value for area in ImprovementArea])]
         baseline_payload = manifest.get("baseline_scores")
         baseline = NormalizedScores(**baseline_payload) if baseline_payload else None
+        visual_started = time.perf_counter()
         visual, landmarks = analyze_frames_with_artifacts(extract_frames(str(video_path(session_id))))
+        _log_stage_timing("visual analysis", visual_started)
         write_landmarks(session_id, landmarks)
         scores = normalize_scores(visual, archetype)
 
         update_manifest(session_id, status="processing", stage="Analyzing voice and transcript")
         get_persistence().update_session(session_id, {"status": "processing", "stage": "Analyzing voice and transcript"})
+        audio_started = time.perf_counter()
         extracted_audio = extract_audio_track(str(video_path(session_id)))
         audio = AudioAnalysisResult.model_validate(analyze_audio(extracted_audio))
+        _log_stage_timing("audio analysis and transcription", audio_started)
 
         update_manifest(session_id, status="processing", stage="Generating grounded coaching")
         get_persistence().update_session(session_id, {"status": "processing", "stage": "Generating grounded coaching"})
+        coaching_started = time.perf_counter()
         cards = CoachingService().generate_cards(scores=scores, archetype=archetype, audience_context=manifest.get("audience_context", ""), analysis=visual, baseline=baseline, improvement_areas=improvement_areas)
+        _log_stage_timing("coaching", coaching_started)
         report = CoachingReport(
             archetype=archetype,
             scores=scores,
@@ -258,9 +271,11 @@ def analyze_session_task(self, session_id: str) -> dict:
         report = _apply_improvement_focus(report, aggregates)
         payload = report.model_dump(mode="json")
         persistence = get_persistence()
+        persistence_started = time.perf_counter()
         paths = persistence.upload_artifacts(session_id, video_path(session_id), landmarks_path(session_id))
         uploaded_paths = list(paths.values())
         committed = persistence.commit_session(session_id, payload, _durable_cards(report), aggregates)
+        _log_stage_timing("persistence", persistence_started)
         update_manifest(session_id, status="success", stage="Analysis complete", report=payload, error=None)
         if committed.get("replaced_session_id"):
             try:

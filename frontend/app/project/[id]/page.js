@@ -15,6 +15,7 @@ import useApi from "@/hooks/useApi";
 import { formatDate, getDaysUntilDeadline, projectFromApi, sessionFromApi } from "@/lib/data";
 import { archetypeLabels } from "@/lib/archetypes.mjs";
 import { improvementAreaGroups, improvementAreaGroupByValue, improvementAreaLabels } from "@/lib/improvementAreas.mjs";
+import { buildProgressData } from "@/lib/progressData.mjs";
 import dynamic from "next/dynamic";
 
 const TimelineChart = dynamic(() => import("@/components/TimelineChart"), { ssr: false });
@@ -47,7 +48,7 @@ export default function ProjectPage() {
   const latest = sessions[0] || null;
   const days = project ? getDaysUntilDeadline(project.deadline) : null;
   const deadlineStatus = days === null ? null : days > 0 ? `${days} days remaining` : days === 0 ? "Deadline today" : "Deadline passed";
-  const progressData = [...sessions].reverse().map((session) => ({ session: session.name, "Facial expressions": session.face, Tone: session.tone, Body: session.body }));
+  const progressData = buildProgressData(sessions);
   const handleSessionUpload = (file) => { setModal("processing"); analysisJob.start({ file, projectId: id, archetype: project?.default_archetype_key || "corporate_board", audienceContext: project?.description || "" }); };
 
   const handleProjectEdit = async (form) => {

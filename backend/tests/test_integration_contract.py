@@ -59,7 +59,7 @@ class SessionFlowContractTest(unittest.TestCase):
             frames_analyzed=10, duration_seconds=5,
         )
         scores = NormalizedScores(eye_contact_score=80, expression_score=75, posture_score=85, gesture_score=70, archetype=Archetype.CORPORATE_BOARD)
-        audio_payload = {"summary": {}, "performance_scores": {"aggregate_vocal_rating": 78.0}, "readable_metrics": {}, "transcript": {"text": "Hello"}, "pauses_timeline": [], "speech_issues": {}, "actionable_coaching_cards": []}
+        audio_payload = {"scoring_version": "yin-semitone-v2", "summary": {}, "performance_scores": {"aggregate_vocal_rating": 78.0}, "readable_metrics": {}, "transcript": {"text": "Hello"}, "pauses_timeline": [], "speech_issues": {}, "actionable_coaching_cards": []}
         card = CoachingCard(module=Module.FACE, problem="Gaze drops", importance="Connection", actionable_fix="Hold the lens")
         session_id = "a081b0b6-3264-40ac-8e42-ff03e907ca27"
         self.persistence.create_pending_session({"id": session_id, "project_id": self.project["id"], "owner_id": "user-1", "archetype_key": "corporate_board"})
@@ -79,10 +79,12 @@ class SessionFlowContractTest(unittest.TestCase):
             self.assertTrue(video.exists())
             self.assertFalse(audio.exists())
             self.assertEqual(report["raw_analysis"]["frames_analyzed"], 10)
+            self.assertEqual(report["version"], "2.0")
             write_landmarks.assert_called_once()
             self.assertTrue(any(call.kwargs.get("status") == "success" for call in update.call_args_list))
             durable = self.persistence.get_session("user-1", session_id)
             self.assertEqual(durable["sequence_number"], 1)
+            self.assertEqual(durable["analysis_result"]["report_version"], "2.0")
             self.assertEqual(self.persistence.get_project("user-1", self.project["id"])["baseline_session_id"], session_id)
 
 

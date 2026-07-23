@@ -205,6 +205,7 @@ class StagnationSignal(BaseModel):
 
 
 class AudioAnalysisResult(BaseModel):
+    scoring_version: str
     summary: dict[str, Any]
     performance_scores: dict[str, float]
     readable_metrics: dict[str, Any]
@@ -220,6 +221,7 @@ class ArtifactLinks(BaseModel):
 
 
 class CoachingReport(BaseModel):
+    version: str = "2.0"
     archetype: Archetype
     scores: NormalizedScores
     raw_analysis: VideoAnalysisResult

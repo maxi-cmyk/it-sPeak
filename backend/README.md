@@ -97,8 +97,8 @@ the Dockerfile, or a committed platform manifest.
 
 The production entrypoint also stores Librosa's compiled Numba kernels under
 `$ITSPEAK_ARTIFACT_DIR/.numba-cache` by default. This cache persists across
-deployments and avoids repeated pitch-tracking compilation while leaving
-`librosa.pyin`, its parameters, and all calibrated scoring inputs unchanged.
+deployments and keeps the audio analysis cache warm. New reports use the much
+faster `librosa.yin` tracker with speaker-normalized semitone scoring.
 Set `NUMBA_CACHE_DIR` only when the host requires a different writable cache
 location.
 

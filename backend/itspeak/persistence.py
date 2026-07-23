@@ -195,7 +195,7 @@ class InMemoryPersistence:
                 replacement.update(status="replaced", retired_at=_now(), retired_reason="replaced")
             sequence = project["next_sequence_number"]; project["next_sequence_number"] += 1
             session.update(status="success", stage="Analysis complete", sequence_number=sequence, retained_at=_now(), completed_at=_now())
-            self.results[session_id] = {"session_id": session_id, **aggregates, "normalized_scores": report.get("scores", {}), "metric_confidence": report.get("raw_analysis", {}).get("metric_confidence", {}), "report": deepcopy(report)}
+            self.results[session_id] = {"session_id": session_id, "report_version": report.get("version", "1.0"), **aggregates, "normalized_scores": report.get("scores", {}), "metric_confidence": report.get("raw_analysis", {}).get("metric_confidence", {}), "report": deepcopy(report)}
             self.cards[session_id] = deepcopy(cards)
             baseline = project["baseline_session_id"] is None
             if baseline: project["baseline_session_id"] = session_id

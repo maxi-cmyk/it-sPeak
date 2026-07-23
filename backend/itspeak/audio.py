@@ -35,8 +35,75 @@ DEFAULT_SCORING_PROFILE_PATH = Path(__file__).resolve().parents[1] / "calibrated
 DEFAULT_SAMPLE_AUDIO_FILENAME = "sample_presentation.mp3"
 DEFAULT_FILLERS = ["um", "uh", "like", "so", "basically", "actually"]
 FILLER_EXAMPLE_LIMIT = 3
+SCORING_VERSION = "yin-semitone-v2"
+YIN_FMIN_HZ = float(librosa.note_to_hz("C2"))
+YIN_FMAX_HZ = 500.0
+YIN_FRAME_LENGTH = 2048
 PITCH_FRAME_HOP_LENGTH = 512
+YIN_TROUGH_THRESHOLD = 0.1
+YIN_RMS_CUTOFF_DB = -30.0
+YIN_TRIM_QUANTILE = 0.05
+MIN_USABLE_PITCH_FRAMES = 10
 MIN_SEGMENT_VOICED_PITCHES = 3
+
+
+class InsufficientPitchDataError(ValueError):
+    """Raised when a recording has too little voiced audio for intonation scoring."""
+
+
+def extract_yin_pitch_timeline(y, sample_rate):
+    """Return median-relative semitone pitch values with unusable frames set to None."""
+    samples = np.asarray(y, dtype=float)
+    if samples.size == 0:
+        raise InsufficientPitchDataError("No audio samples were available for pitch analysis.")
+
+    f0 = librosa.yin(
+        samples,
+        fmin=YIN_FMIN_HZ,
+        fmax=YIN_FMAX_HZ,
+        sr=sample_rate,
+        frame_length=YIN_FRAME_LENGTH,
+        hop_length=PITCH_FRAME_HOP_LENGTH,
+        trough_threshold=YIN_TROUGH_THRESHOLD,
+    )
+    rms = librosa.feature.rms(
+        y=samples,
+        frame_length=YIN_FRAME_LENGTH,
+        hop_length=PITCH_FRAME_HOP_LENGTH,
+        center=True,
+    )[0]
+    frame_count = min(len(f0), len(rms))
+    f0 = np.asarray(f0[:frame_count], dtype=float)
+    rms = np.asarray(rms[:frame_count], dtype=float)
+    peak_rms = float(np.max(rms)) if rms.size else 0.0
+    if peak_rms <= np.finfo(float).eps:
+        raise InsufficientPitchDataError("No voiced audio was detected for pitch analysis.")
+
+    rms_db = librosa.amplitude_to_db(rms, ref=peak_rms)
+    usable_mask = np.isfinite(f0) & (f0 > 0) & (rms_db >= YIN_RMS_CUTOFF_DB)
+    usable_f0 = f0[usable_mask]
+    if usable_f0.size < MIN_USABLE_PITCH_FRAMES:
+        raise InsufficientPitchDataError(
+            f"Only {usable_f0.size} usable pitch frames were detected; "
+            f"at least {MIN_USABLE_PITCH_FRAMES} are required."
+        )
+
+    lower, upper = np.quantile(
+        usable_f0,
+        [YIN_TRIM_QUANTILE, 1.0 - YIN_TRIM_QUANTILE],
+    )
+    usable_mask &= (f0 >= lower) & (f0 <= upper)
+    trimmed_f0 = f0[usable_mask]
+    if trimmed_f0.size < MIN_USABLE_PITCH_FRAMES:
+        raise InsufficientPitchDataError(
+            f"Only {trimmed_f0.size} usable pitch frames remained after outlier filtering; "
+            f"at least {MIN_USABLE_PITCH_FRAMES} are required."
+        )
+
+    median_f0 = float(np.median(trimmed_f0))
+    semitone_timeline = np.full(frame_count, np.nan, dtype=float)
+    semitone_timeline[usable_mask] = 12.0 * np.log2(f0[usable_mask] / median_f0)
+    return [float(value) if np.isfinite(value) else None for value in semitone_timeline]
 
 def is_supported_audio_file(file_path):
     return Path(file_path).suffix.lower() in SUPPORTED_AUDIO_EXTENSIONS
@@ -114,12 +181,13 @@ def build_folder_benchmark_profile(base_results, base_audio_file):
 
     return {
         "archetype": "Folder Benchmark Rehearsal",
+        "scoring_version": SCORING_VERSION,
         "dataset_source": f"Folder benchmark: {Path(base_audio_file).name}",
         "calibrated_metrics": {
             "target_wpm": raw_metrics["wpm"],
-            "target_pitch_std": raw_metrics["pitch_variance_std"],
+            "target_pitch_variation_std_semitones": raw_metrics["pitch_variation_std_semitones"],
             "wpm_tolerance_margin": template_metrics["wpm_tolerance_margin"],
-            "pitch_tolerance_margin": template_metrics["pitch_tolerance_margin"],
+            "pitch_variation_tolerance_semitones": template_metrics["pitch_variation_tolerance_semitones"],
         },
     }
 
@@ -154,11 +222,11 @@ def build_coaching_cards(
 def rescore_analysis_with_profile(results, scoring_profile):
     calibrated_metrics = scoring_profile["calibrated_metrics"]
     target_wpm = calibrated_metrics["target_wpm"]
-    target_pitch_std = calibrated_metrics["target_pitch_std"]
+    target_pitch_std = calibrated_metrics["target_pitch_variation_std_semitones"]
     wpm_tolerance = calibrated_metrics["wpm_tolerance_margin"]
-    pitch_tolerance = calibrated_metrics["pitch_tolerance_margin"]
+    pitch_tolerance = calibrated_metrics["pitch_variation_tolerance_semitones"]
     observed_wpm = results["raw_metrics"]["wpm"]
-    observed_pitch_std = results["raw_metrics"]["pitch_variance_std"]
+    observed_pitch_std = results["raw_metrics"]["pitch_variation_std_semitones"]
     total_words = results["transcript"]["word_count"]
     filler_count = results["extracted_telemetry"]["total_filler_count"]
     filler_ratio = filler_count / total_words if total_words else 0.0
@@ -195,9 +263,11 @@ def rescore_analysis_with_profile(results, scoring_profile):
 
     results["baseline_profile"] = {
         "archetype": scoring_profile["archetype"],
+        "scoring_version": scoring_profile.get("scoring_version", SCORING_VERSION),
         "dataset_source": scoring_profile.get("dataset_source"),
         "calibrated_metrics": calibrated_metrics,
     }
+    results["scoring_version"] = scoring_profile.get("scoring_version", SCORING_VERSION)
     results["performance_scores"] = performance_scores
     results["readable_metrics"] = readable_metrics
     results["summary"] = build_summary(readable_metrics, performance_scores, coaching_cards)
@@ -283,9 +353,9 @@ def build_performance_scores(
     calibrated_metrics,
 ):
     target_wpm = calibrated_metrics["target_wpm"]
-    target_pitch_std = calibrated_metrics["target_pitch_std"]
+    target_pitch_std = calibrated_metrics["target_pitch_variation_std_semitones"]
     wpm_tolerance = calibrated_metrics["wpm_tolerance_margin"]
-    pitch_tolerance = calibrated_metrics["pitch_tolerance_margin"]
+    pitch_tolerance = calibrated_metrics["pitch_variation_tolerance_semitones"]
     filler_ratio = filler_count / total_words if total_words else 0.0
 
     pace_label = label_pace(observed_wpm, target_wpm, wpm_tolerance)
@@ -380,9 +450,9 @@ def build_readable_metrics(
     filler_examples=None,
 ):
     target_wpm = calibrated_metrics["target_wpm"]
-    target_pitch_std = calibrated_metrics["target_pitch_std"]
+    target_pitch_std = calibrated_metrics["target_pitch_variation_std_semitones"]
     wpm_tolerance = calibrated_metrics["wpm_tolerance_margin"]
-    pitch_tolerance = calibrated_metrics["pitch_tolerance_margin"]
+    pitch_tolerance = calibrated_metrics["pitch_variation_tolerance_semitones"]
     filler_ratio = filler_count / total_words if total_words else 0.0
 
     pace_label = label_pace(observed_wpm, target_wpm, wpm_tolerance)
@@ -417,8 +487,8 @@ def build_readable_metrics(
         "intonation": {
             "label": intonation_label,
             "value": observed_pitch_std,
-            "unit": "pitch standard deviation in Hz",
-            "target_range": format_target_range(target_pitch_std, pitch_tolerance, "Hz pitch standard deviation"),
+            "unit": "semitones of pitch variation",
+            "target_range": format_target_range(target_pitch_std, pitch_tolerance, "semitones"),
             "score": performance_scores["vocal_intonation_variety"],
             "meaning": intonation_meanings[intonation_label],
         },
@@ -521,7 +591,7 @@ def pitch_values_for_time_range(pitch_timeline, start, end, sample_rate, hop_len
     end_frame = min(len(pitch_timeline), int(np.ceil(end * sample_rate / hop_length)))
     if end_frame <= start_frame:
         return []
-    return [pitch for pitch in pitch_timeline[start_frame:end_frame] if pitch > 0]
+    return [pitch for pitch in pitch_timeline[start_frame:end_frame] if pitch is not None]
 
 def pause_gaps_for_segment(pauses, start, end):
     return [
@@ -549,7 +619,7 @@ def build_segment_metrics(words_data, pauses, pitch_timeline, sample_rate, fille
             "filler_count": filler_count,
             "pause_gap_count": len(pause_gaps),
             "pause_gaps": pause_gaps,
-            "pitch_variance_std": (
+            "pitch_variation_std_semitones": (
                 round(float(np.std(voiced_pitches)), 2)
                 if len(voiced_pitches) >= MIN_SEGMENT_VOICED_PITCHES
                 else None
@@ -594,11 +664,11 @@ def build_segment_pacing_flags(segment_metrics, calibrated_metrics):
 
 def build_segment_intonation_flags(segment_metrics, calibrated_metrics):
     flags = []
-    target_pitch_std = calibrated_metrics["target_pitch_std"]
-    pitch_tolerance = calibrated_metrics["pitch_tolerance_margin"]
+    target_pitch_std = calibrated_metrics["target_pitch_variation_std_semitones"]
+    pitch_tolerance = calibrated_metrics["pitch_variation_tolerance_semitones"]
 
     for segment in segment_metrics:
-        pitch_std = segment.get("pitch_variance_std")
+        pitch_std = segment.get("pitch_variation_std_semitones")
         if pitch_std is None:
             continue
         intonation_label = label_intonation(pitch_std, target_pitch_std, pitch_tolerance)
@@ -691,9 +761,9 @@ def analyze_audio(file_path, pause_threshold=1.5, scoring_profile=None):
         scoring_profile = load_scoring_profile()
     calibrated_metrics = scoring_profile["calibrated_metrics"]
     target_wpm = calibrated_metrics["target_wpm"]
-    target_pitch_std = calibrated_metrics["target_pitch_std"]
+    target_pitch_std = calibrated_metrics["target_pitch_variation_std_semitones"]
     wpm_tolerance = calibrated_metrics["wpm_tolerance_margin"]
-    pitch_tolerance = calibrated_metrics["pitch_tolerance_margin"]
+    pitch_tolerance = calibrated_metrics["pitch_variation_tolerance_semitones"]
 
     # ==========================================
     # 1. ACOUSTIC ANALYSIS LAYER (Librosa)
@@ -703,24 +773,18 @@ def analyze_audio(file_path, pause_threshold=1.5, scoring_profile=None):
     sr = 16000
     y, _ = librosa.load(file_path, sr=sr, mono=True)
 
-    # Compute short-time fundamental frequency (pitch) via probabilistic YIN
-    f0, _, _ = librosa.pyin(
-        y,
-        fmin=librosa.note_to_hz('C2'), # ~65Hz (Low male voice base)
-        fmax=librosa.note_to_hz('C7')  # ~2093Hz (High screaming/expressive range)
-    )
-
-    # Clean up NaNs from silence zones for presentation
-    pitch_timeline = np.nan_to_num(f0).astype(float).tolist()
+    # Compute short-time pitch with fast YIN, then normalize it to semitones
+    # relative to the speaker's median pitch.
+    pitch_started = time.perf_counter()
+    pitch_timeline = extract_yin_pitch_timeline(y, sr)
+    print(f"YIN pitch analysis completed in {time.perf_counter() - pitch_started:.3f}s")
 
     # Extract structural pitch metrics
-    voiced_pitches = [p for p in pitch_timeline if p > 0]
-    pitch_min = min(voiced_pitches) if voiced_pitches else 0
-    pitch_max = max(voiced_pitches) if voiced_pitches else 0
+    voiced_pitches = [pitch for pitch in pitch_timeline if pitch is not None]
     pitch_std = float(np.std(voiced_pitches)) if voiced_pitches else 0.0
 
-    # Determine basic monotony threshold (Heuristic Tuning Target)
-    is_monotone = bool(pitch_std < 20.0)
+    # A monotone result is one below the calibrated semitone target range.
+    is_monotone = bool(pitch_std < target_pitch_std - pitch_tolerance)
 
     # ==========================================
     # 2. SEMANTIC ANALYSIS LAYER (Whisper)
@@ -730,6 +794,7 @@ def analyze_audio(file_path, pause_threshold=1.5, scoring_profile=None):
     if not settings.openai_api_key:
         raise RuntimeError("ITSPEAK_OPENAI_API_KEY is required for transcription.")
     client = OpenAI(api_key=settings.openai_api_key)
+    transcription_started = time.perf_counter()
     with open(file_path, "rb") as audio_file:
         transcript = client.audio.transcriptions.create(
             file=audio_file,
@@ -738,6 +803,7 @@ def analyze_audio(file_path, pause_threshold=1.5, scoring_profile=None):
             response_format="verbose_json",
             timestamp_granularities=["word"],
         )
+    print(f"OpenAI transcription completed in {time.perf_counter() - transcription_started:.3f}s")
 
     words_data = []
     filler_count = 0
@@ -823,9 +889,11 @@ def analyze_audio(file_path, pause_threshold=1.5, scoring_profile=None):
 
     return {
         "analysis_status": "Success",
+        "scoring_version": SCORING_VERSION,
         "summary": summary,
         "baseline_profile": {
             "archetype": scoring_profile["archetype"],
+            "scoring_version": scoring_profile.get("scoring_version", SCORING_VERSION),
             "dataset_source": scoring_profile.get("dataset_source"),
             "calibrated_metrics": calibrated_metrics
         },
@@ -833,7 +901,7 @@ def analyze_audio(file_path, pause_threshold=1.5, scoring_profile=None):
         "readable_metrics": readable_metrics,
         "extracted_telemetry": {
             "measured_wpm": observed_wpm,
-            "measured_pitch_std_hz": observed_pitch_std,
+            "pitch_variation_std_semitones": observed_pitch_std,
             "total_filler_count": filler_count
         },
         "pauses_timeline": pauses,
@@ -851,7 +919,7 @@ def analyze_audio(file_path, pause_threshold=1.5, scoring_profile=None):
         ),
         "raw_metrics": {
             "wpm": observed_wpm,
-            "pitch_variance_std": observed_pitch_std,
+            "pitch_variation_std_semitones": observed_pitch_std,
             "is_monotone_delivery": is_monotone
         },
         "debug": {

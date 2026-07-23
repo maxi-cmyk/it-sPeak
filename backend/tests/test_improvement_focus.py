@@ -29,6 +29,7 @@ def make_report(areas: list[ImprovementArea]) -> CoachingReport:
         ),
         raw_analysis=VideoAnalysisResult(face=FaceMetrics(), body=BodyMetrics()),
         audio=AudioAnalysisResult(
+            scoring_version="yin-semitone-v2",
             summary={},
             performance_scores={"aggregate_vocal_rating": 65, "pacing_alignment": 55, "vocal_intonation_variety": 75, "word_choice_efficiency": 65},
             readable_metrics={},
