@@ -21,6 +21,11 @@ dist/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+.coverage.*
+coverage/
+coverage.xml
+htmlcov/
 
 # --- Media / large sample files ---
 *.mp4
@@ -36,6 +41,7 @@ Thumbs.db
 # --- Node / Next.js ---
 node_modules/
 .next/
+.turbo/
 .claude/
 
 # --- Local Impeccable tooling ---
@@ -44,10 +50,16 @@ node_modules/
 
 # --- Local planning and agent workspace ---
 /.agents/
+/.codex/
+/skills-lock.json
 /changes.md
 /DESIGN.md
 /nextSteps.md
 /PRODUCT.md
+
+# --- Local service and deployment tooling ---
+.clerk/
+.vercel/
 
 # --- Supabase CLI local link state ---
 supabase/.temp/
@@ -55,3 +67,5 @@ supabase/.temp/
 # --- Local runtime state ---
 backend/celerybeat-schedule*
 backend/itspeak-sessions/
+*.log
+*.pid
