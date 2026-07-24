@@ -86,15 +86,87 @@ cd backend
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-## Production
+## Cloud deployment
 
-- Frontend: Vercel, root directory `frontend/`.
-- Backend: Railway Docker service, root directory `backend/`.
-- Redis: managed Railway Redis.
-- Persistent volume: mount `/data` and set `ITSPEAK_ARTIFACT_DIR=/data/itspeak-sessions`.
-- Keep one backend replica and `CELERY_WORKER_CONCURRENCY=1`.
+The hosted application uses Supabase, Clerk, Railway, and Vercel. Deploy from `main`.
 
-The production Celery worker processes one analysis at a time and restarts after each full analysis to release MediaPipe and Librosa memory. Queued jobs remain in Redis. Temporary local artifacts expire after 24 hours; successful reports, videos, and landmarks remain in Supabase.
+### 1. Prepare Supabase and Clerk
+
+1. Create a Supabase project, then apply the schema:
+
+   ```bash
+   supabase login
+   supabase link --project-ref YOUR_PROJECT_REF
+   supabase db push
+   ```
+
+2. Create a Clerk production instance and configure its production domain and sign-in/sign-up URLs.
+3. Keep the Clerk production publishable and secret keys available for both deployments.
+
+### 2. Deploy the backend on Railway
+
+1. Create a Railway project and add a managed Redis service.
+2. Add a service from this GitHub repository with:
+   - branch: `main`;
+   - root directory: `/backend`;
+   - builder: `Dockerfile`;
+   - health-check path: `/healthz`;
+   - one replica.
+3. Attach a persistent volume to the backend service at `/data`.
+4. Add these Railway variables:
+
+   ```env
+   ITSPEAK_ENVIRONMENT=production
+   ITSPEAK_REDIS_URL=${{Redis.REDIS_URL}}
+   ITSPEAK_FRONTEND_ORIGIN=https://YOUR_VERCEL_DOMAIN
+   ITSPEAK_ARTIFACT_DIR=/data/itspeak-sessions
+   CELERY_WORKER_CONCURRENCY=1
+   CLERK_SECRET_KEY=YOUR_CLERK_SECRET_KEY
+   ITSPEAK_SUPABASE_URL=YOUR_SUPABASE_URL
+   ITSPEAK_SUPABASE_SECRET_KEY=YOUR_SUPABASE_SECRET_KEY
+   ITSPEAK_SUPABASE_STORAGE_BUCKET=session-artifacts
+   ITSPEAK_OPENAI_API_KEY=YOUR_OPENAI_API_KEY
+   ```
+
+   If the Redis service has a different name, use its generated `REDIS_URL` reference instead.
+
+5. Deploy, generate a public Railway domain, and verify:
+
+   ```bash
+   curl --fail https://YOUR_RAILWAY_DOMAIN/healthz
+   ```
+
+### 3. Deploy the frontend on Vercel
+
+1. Import the same GitHub repository into Vercel.
+2. Configure:
+   - root directory: `frontend`;
+   - install command: `npm ci`;
+   - build command: `npm run build`;
+   - production branch: `main`;
+   - output directory: leave unset.
+3. Add these production variables:
+
+   ```env
+   NEXT_PUBLIC_API_URL=https://YOUR_RAILWAY_DOMAIN
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_CLERK_PUBLISHABLE_KEY
+   CLERK_SECRET_KEY=YOUR_CLERK_SECRET_KEY
+   ```
+
+4. Deploy and copy the production Vercel URL.
+5. Set Railway `ITSPEAK_FRONTEND_ORIGIN` to that exact origin, without a trailing path, and redeploy the backend.
+6. Confirm the same Vercel domain and production Clerk keys are configured in Clerk.
+
+### 4. Verify production
+
+- Open `/sign-in` while signed out.
+- Confirm `/` redirects to sign-in.
+- Create a project and complete one authenticated video analysis.
+- Confirm the report remains available after restarting the Railway service.
+
+The worker processes one analysis at a time and restarts after each full analysis to release MediaPipe and Librosa memory. Queued jobs remain in Redis. Temporary local artifacts expire after 24 hours; successful reports, videos, and landmarks remain in Supabase.
+
+Provider references: [Railway Dockerfiles](https://docs.railway.com/builds/dockerfiles), [Railway volumes](https://docs.railway.com/volumes), [Vercel monorepos](https://vercel.com/docs/monorepos), [Clerk production deployment](https://clerk.com/docs/guides/development/deployment/production), and [Supabase migrations](https://supabase.com/docs/guides/deployment/database-migrations).
 
 ## Limits
 
